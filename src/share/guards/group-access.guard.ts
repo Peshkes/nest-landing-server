@@ -10,21 +10,13 @@ export class GroupAccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user: User = request.user;
 
-    if (user.superUser) {
-      return true;
-    }
+    if (user.superUser) return true;
 
     const groupId = request.params.id;
-    if (!groupId) {
-      return false;
-    }
+    if (!groupId) return false;
 
     const role = await this.getClientRole(user._id.toString(), groupId);
-    if (role && role >= this.minRole) {
-      return true;
-    }
-
-    return false;
+    return role && role >= this.minRole;
   }
 
   protected async getClientRole(
@@ -43,9 +35,7 @@ export class GroupAccessGuard implements CanActivate {
 
       if (groupAccess && groupAccess.groups) {
         const group = groupAccess.groups.get(groupId);
-        if (group && group[0]) {
-          return group[0].role;
-        }
+        if (group && group[0]) return group[0].role;
       }
 
       return null;
