@@ -1,5 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, Validate } from "class-validator";
-import { PasswordComplexityValidator } from "../../validators/password-complexity.validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  Validate,
+} from "class-validator";
+import { PasswordComplexityValidator } from "../validators/password-complexity.validator";
 
 export class RegistrationDto {
   @IsString({

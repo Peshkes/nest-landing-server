@@ -1,30 +1,45 @@
-import { Body, Controller, Delete, Get, Param, Put } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  UseGuards,
+} from "@nestjs/common";
 import { UserService } from "../service/user.service";
 import { PasswordDto } from "../dto/password.dto";
 import { EmailDto } from "../dto/email.dto";
 import { MoveOffersRequestDto } from "../dto/move-offers-request.dto";
+import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
+import { UserAccessGuard } from "../../share/guards/group-access-factory";
 
 @Controller("user")
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get("/all")
+  @UseGuards(SuperUserAccessGuard)
   async getAllUsers() {
     return await this.userService.getAllUsers();
   }
 
   @Get("/:object")
+  @UseGuards(OwnerAccessGuard)
   async getUser(@Param("object") object: string) {
     return await this.userService.getUser(object);
   }
 
   @Delete("/:id")
+  @UseGuards(OwnerAccessGuard)
   async removeUser(@Param("id") id: string) {
     return await this.userService.removeUser(id);
   }
 
   @Put("/:object")
-  async updatePassport(
+  @UseGuards(OwnerAccessGuard)
+  async updatePasswort(
     @Param("object") object: string,
     @Body() passwordDto: PasswordDto,
   ) {
@@ -46,6 +61,7 @@ export class UserController {
   }
 
   @Put("copy/:group_id")
+  @UseGuards(UserAccessGuard)
   async copyToGroup(
     @Param("group_id") group_id: string,
     @Body() moveOffersRequestDto: MoveOffersRequestDto,
@@ -54,6 +70,7 @@ export class UserController {
   }
 
   @Put("copy/:group_id")
+  @UseGuards(UserAccessGuard)
   async moveToGroup(
     @Param("group_id") group_id: string,
     @Body() moveOffersRequestDto: MoveOffersRequestDto,

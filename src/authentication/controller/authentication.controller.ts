@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
 import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
-import { generateToken } from "../../config/csrf.config";
+import { generateToken } from "../../share/config/csrf.config";
 import { SignInDto } from "../dto/sign-in.dto";
 
 @Controller("auth")

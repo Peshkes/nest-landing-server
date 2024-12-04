@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, MinLength, Validate } from "class-validator";
-import { PasswordComplexityValidator } from "../../validators/password-complexity.validator";
+import { PasswordComplexityValidator } from "../validators/password-complexity.validator";
 
 export class PasswordDto {
   @IsString({
