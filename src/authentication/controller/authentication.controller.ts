@@ -2,16 +2,19 @@ import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
 import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
-import { generateToken } from "../../share/config/csrf.config";
 import { SignInDto } from "../dto/sign-in.dto";
+import { CsrfService } from "../../share/services/csrf.service";
 
 @Controller("auth")
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly csrfConfigService: CsrfService,
+  ) {}
 
   @Get("/csrf")
   getCsrfToken(@Req() req: Request, @Res() res: Response) {
-    return generateToken(req, res, true);
+    return this.csrfConfigService.generateToken(req, res, true);
   }
 
   @Post("/registration")
@@ -32,8 +35,6 @@ export class AuthenticationController {
 
   @Post("/logout")
   logout(@Res() res: Response) {
-    return res
-      .clearCookie("accessToken", { httpOnly: true })
-      .clearCookie("refreshToken", { httpOnly: true });
+    return res.clearCookie("accessToken", { httpOnly: true }).clearCookie("refreshToken", { httpOnly: true });
   }
 }

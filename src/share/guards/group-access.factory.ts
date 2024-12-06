@@ -7,10 +7,7 @@ export const RoleGuardFactory = (minRole: Roles) => {
       super(minRole);
     }
 
-    public async getClientRole(
-      accountId: string,
-      groupId: string,
-    ): Promise<Roles | null> {
+    public async getClientRole(accountId: string, groupId: string): Promise<Roles | null> {
       return await super.getClientRole(accountId, groupId);
     }
   }

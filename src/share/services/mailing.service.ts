@@ -5,10 +5,7 @@ import { ConfigService } from "@nestjs/config";
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
-  private readonly baseUrl =
-    this.configService.get<string>("HOST") +
-    ":" +
-    this.configService.get<string>("PORT");
+
 
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
@@ -22,12 +19,7 @@ export class MailService {
     });
   }
 
-  async sendMailWithHtml(
-    from: string,
-    to: string,
-    subject: string,
-    html: string,
-  ) {
+  async sendMailWithHtml(from: string, to: string, subject: string, html: string) {
     await this.transporter.sendMail({
       from,
       to,

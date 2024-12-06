@@ -1,9 +1,4 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
 
 import { AuthenticationModule } from "./authentication/authentication.module";
 import { GlobalExceptionFilter } from "./share/filtres/global-exception.filter";
@@ -11,21 +6,26 @@ import { APP_FILTER } from "@nestjs/core";
 import { CsrfMiddleware } from "./share/middlewares/csrf.middleware";
 import { ConfigModule } from "@nestjs/config";
 import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware";
+import { GroupModule } from "./group/group.module";
+import { CsrfService } from "./share/services/csrf.service";
 
 @Module({
   imports: [
-    AuthenticationModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ".env",
     }),
+    AuthenticationModule,
+    GroupModule,
   ],
   providers: [
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
     },
+    CsrfService,
   ],
+  exports: [CsrfService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

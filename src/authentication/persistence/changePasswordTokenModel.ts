@@ -18,8 +18,5 @@ const changePasswordTokenSchema = new mongoose.Schema({
   },
 });
 
-const ChangePasswordTokenModel = mongoose.model(
-  "ChangePasswordTokenSchema",
-  changePasswordTokenSchema,
-);
+const ChangePasswordTokenModel = mongoose.model("ChangePasswordTokenSchema", changePasswordTokenSchema);
 export default ChangePasswordTokenModel;

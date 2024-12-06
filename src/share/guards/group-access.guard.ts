@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
 import { Roles, User } from "../../authentication/authentication.types";
+import GroupAccessModel from "../../group/persistanse/groupAccessModel";
 
 @Injectable()
 export class GroupAccessGuard implements CanActivate {
@@ -19,10 +20,7 @@ export class GroupAccessGuard implements CanActivate {
     return role && role >= this.minRole;
   }
 
-  protected async getClientRole(
-    accountId: string,
-    groupId: string,
-  ): Promise<Roles | null> {
+  protected async getClientRole(accountId: string, groupId: string): Promise<Roles | null> {
     try {
       const groupAccess = await GroupAccessModel.findOne(
         {

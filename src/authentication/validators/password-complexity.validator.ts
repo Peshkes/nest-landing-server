@@ -1,15 +1,9 @@
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from "class-validator";
+import { ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
 
 @ValidatorConstraint({ name: "PasswordComplexity", async: false })
-export class PasswordComplexityValidator
-  implements ValidatorConstraintInterface
-{
+export class PasswordComplexityValidator implements ValidatorConstraintInterface {
   validate(password: string): boolean {
-    const regex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return regex.test(password);
   }
 

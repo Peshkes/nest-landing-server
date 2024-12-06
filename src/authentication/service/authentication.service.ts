@@ -4,7 +4,7 @@ import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import UserModel from "../persistence/userModel";
 import { JwtTokenPayload, Roles, User } from "../authentication.types";
-import { JwtService } from "../jwt.service";
+import { JwtService } from "../../share/services/jwt.service";
 
 @Injectable()
 export class AuthenticationService {
@@ -37,15 +37,9 @@ export class AuthenticationService {
     const existingUser: User | null = await UserModel.findOne({
       email: singInDto.email,
     });
-    if (!existingUser)
-      throw new BadRequestException(
-        "Пользователь с имейлом " + singInDto.email + " не найден",
-      );
+    if (!existingUser) throw new BadRequestException("Пользователь с имейлом " + singInDto.email + " не найден");
 
-    const isPasswordCorrect = await bcrypt.compare(
-      singInDto.password,
-      existingUser.password,
-    );
+    const isPasswordCorrect = await bcrypt.compare(singInDto.password, existingUser.password);
 
     if (!isPasswordCorrect) throw new BadRequestException("Неверный пароль");
     return this.jwtService.generateTokenPair(existingUser._id.toString());
@@ -53,10 +47,7 @@ export class AuthenticationService {
 
   refresh(token: string) {
     if (!token) throw new BadRequestException("Токен не пришел ");
-    const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(
-      token,
-      true,
-    );
+    const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token, true);
     return this.jwtService.generateTokenPair(decodedToken.userId);
   }
 }
