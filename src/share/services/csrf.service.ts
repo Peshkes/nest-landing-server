@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { doubleCsrf } from "csrf-csrf";
-import * as crypto from "crypto";
+import crypto from "node:crypto";
 
 @Injectable()
 export class CsrfService {
+  //private readonly csrfTokenSecret: string = crypto.randomBytes(64).toString("hex");
   private readonly csrfTokenSecret: string = crypto.randomBytes(64).toString("hex");
 
   private readonly csrfInstance = doubleCsrf({

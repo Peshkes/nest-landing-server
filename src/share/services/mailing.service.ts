@@ -6,7 +6,6 @@ import { ConfigService } from "@nestjs/config";
 export class MailService {
   private transporter: nodemailer.Transporter;
 
-
   constructor(private readonly configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>("SMTP_HOST"),
