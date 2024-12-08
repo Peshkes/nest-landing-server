@@ -15,6 +15,7 @@ export class CsrfService {
   });
 
   get generateToken() {
+    console.log(this.csrfTokenSecret);
     return this.csrfInstance.generateToken;
   }
 

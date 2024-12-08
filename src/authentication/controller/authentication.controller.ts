@@ -14,7 +14,10 @@ export class AuthenticationController {
 
   @Get("/csrf")
   getCsrfToken(@Req() req: Request, @Res() res: Response) {
-    return this.csrfService.generateToken(req, res, true);
+    console.log("looooooooooooooooooooog");
+    const a: string = this.csrfService.generateToken(req, res, true);
+    console.log(a);
+    return a;
   }
 
   @Post("/registration")
