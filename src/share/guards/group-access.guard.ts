@@ -3,7 +3,6 @@ import { RequestWithUser } from "../interfaces/request-with-user.interface";
 import { Roles, User } from "../../authentication/authentication.types";
 import GroupAccessModel from "../../group/persistanse/groupAccessModel";
 
-@Injectable()
 export class GroupAccessGuard implements CanActivate {
   constructor(readonly minRole: Roles) {}
 
@@ -41,5 +40,26 @@ export class GroupAccessGuard implements CanActivate {
       console.error("Ошибка при получении роли:", error);
       return null;
     }
+  }
+}
+
+@Injectable()
+export class UserAccessGuard extends GroupAccessGuard {
+  constructor() {
+    super(Roles.USER);
+  }
+}
+
+@Injectable()
+export class ModeratorAccessGuard extends GroupAccessGuard {
+  constructor() {
+    super(Roles.MODERATOR);
+  }
+}
+
+@Injectable()
+export class AdminAccessGuard extends GroupAccessGuard {
+  constructor() {
+    super(Roles.ADMIN);
   }
 }

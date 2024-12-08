@@ -9,12 +9,12 @@ import { CsrfService } from "../../share/services/csrf.service";
 export class AuthenticationController {
   constructor(
     private readonly authenticationService: AuthenticationService,
-    private readonly csrfConfigService: CsrfService,
+    private readonly csrfService: CsrfService,
   ) {}
 
   @Get("/csrf")
   getCsrfToken(@Req() req: Request, @Res() res: Response) {
-    return this.csrfConfigService.generateToken(req, res, true);
+    return this.csrfService.generateToken(req, res, true);
   }
 
   @Post("/registration")
