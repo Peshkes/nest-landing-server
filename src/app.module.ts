@@ -8,6 +8,9 @@ import { ConfigModule } from "@nestjs/config";
 import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware";
 import { GroupModule } from "./group/group.module";
 import { CsrfService } from "./share/services/csrf.service";
+import { SubscriptionModule } from "./subscription/subscription.module";
+import { TierModule } from "./tier/tier.module";
+import { OfferModule } from "./offer/offer.module";
 
 @Module({
   imports: [
@@ -17,6 +20,9 @@ import { CsrfService } from "./share/services/csrf.service";
     }),
     AuthenticationModule,
     GroupModule,
+    SubscriptionModule,
+    TierModule,
+    OfferModule,
   ],
   providers: [
     {
