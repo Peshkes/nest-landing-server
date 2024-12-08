@@ -17,16 +17,10 @@ export class CsrfMiddleware implements NestMiddleware {
       return res.status(400).send("CSRF token missing in headers");
     }
 
-    let csrfTokenCookie: string;
-    try {
-      csrfTokenCookie = req.cookies["__Host-psifi.x-csrf-token"];
-      if (!csrfTokenCookie) {
-        console.error(chalk.red(`[CSRF Middleware] Missing CSRF token in cookies`));
-        return res.status(400).send("CSRF token missing in cookies");
-      }
-    } catch (error: any) {
-      console.error(chalk.red(`[CSRF Middleware] Error parsing CSRF token cookie: ${error.message}`));
-      return res.status(400).send("Error parsing CSRF token cookie");
+    const csrfTokenCookie = req.cookies["__Host-psifi.x-csrf-token"];
+    if (!csrfTokenCookie) {
+      console.error(chalk.red(`[CSRF Middleware] Missing CSRF token in cookies`));
+      return res.status(400).send("CSRF token missing in cookies");
     }
 
     this.csrfService.doubleCsrfProtection(req, res, (err: any) => {
