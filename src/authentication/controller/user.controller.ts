@@ -5,7 +5,7 @@ import { EmailDto } from "../dto/email.dto";
 import { MoveOffersRequestDto } from "../dto/move-offers-request.dto";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
-import { UserAccessGuard } from "../../share/guards/group-access.factory";
+import { UserAccessGuard } from "../../share/guards/group-access.guard";
 
 @Controller("user")
 export class UserController {
