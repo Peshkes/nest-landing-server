@@ -7,11 +7,11 @@ import { CsrfMiddleware } from "./share/middlewares/csrf.middleware";
 import { ConfigModule } from "@nestjs/config";
 import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware";
 import { GroupModule } from "./group/group.module";
+import { SuperUserAccessGuard } from "./share/guards/super-user-access.guard";
+import { OwnerAccessGuard } from "./share/guards/owner-access.guard";
+import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "./share/guards/group-access.guard";
 import { ShareModule } from "./share/share.module";
 import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.middleware";
-import { SubscriptionModule } from "./subscription/subscription.module";
-import { TierModule } from "./tier/tier.module";
-import { OfferModule } from "./offer/offer.module";
 
 @Module({
   imports: [
@@ -21,19 +21,9 @@ import { OfferModule } from "./offer/offer.module";
     }),
     AuthenticationModule,
     GroupModule,
-    SubscriptionModule,
-    TierModule,
-    OfferModule,
     ShareModule,
   ],
-  providers: [
-    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
-    // { provide: APP_GUARD, useClass: SuperUserAccessGuard },
-    // { provide: APP_GUARD, useClass: OwnerAccessGuard },
-    // { provide: APP_GUARD, useClass: UserAccessGuard },
-    // { provide: APP_GUARD, useClass: ModeratorAccessGuard },
-    // { provide: APP_GUARD, useClass: AdminAccessGuard },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
