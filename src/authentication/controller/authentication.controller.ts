@@ -14,10 +14,8 @@ export class AuthenticationController {
 
   @Get("/csrf")
   getCsrfToken(@Req() req: Request, @Res() res: Response) {
-    console.log("looooooooooooooooooooog");
-    const a: string = this.csrfService.generateToken(req, res, true);
-    console.log(a);
-    return a;
+    const csrfToken = this.csrfService.generateToken(req, res, true);
+    return res.json({ csrfToken });
   }
 
   @Post("/registration")
