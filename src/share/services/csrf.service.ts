@@ -11,7 +11,13 @@ export class CsrfService {
     size: 64,
     ignoredMethods: ["GET"],
     getTokenFromRequest: (req) => req.headers["x-csrf-token"] as string,
-    cookieName: "__Host-psifi.x-csrf-token",
+    cookieName: "x-csrf-token",
+    cookieOptions: {
+      secure: false,
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    },
   });
 
   get generateToken() {
