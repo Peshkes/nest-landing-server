@@ -7,9 +7,6 @@ import { CsrfMiddleware } from "./share/middlewares/csrf.middleware";
 import { ConfigModule } from "@nestjs/config";
 import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware";
 import { GroupModule } from "./group/group.module";
-import { SuperUserAccessGuard } from "./share/guards/super-user-access.guard";
-import { OwnerAccessGuard } from "./share/guards/owner-access.guard";
-import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "./share/guards/group-access.guard";
 import { ShareModule } from "./share/share.module";
 import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.middleware";
 
@@ -22,6 +19,7 @@ import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.mi
     AuthenticationModule,
     GroupModule,
     ShareModule,
+    //SubscriptionModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })

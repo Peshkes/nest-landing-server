@@ -24,8 +24,25 @@ export class AuthenticationController {
   }
 
   @Post("/signin")
-  signin(@Body() singInDto: SignInDto) {
-    return this.authenticationService.signin(singInDto);
+  async signin(@Body() singInDto: SignInDto, @Res() res: Response) {
+    const tokens = await this.authenticationService.signin(singInDto);
+
+    res.cookie("accessToken", tokens.accessToken, {
+      httpOnly: true, // Только для HTTP-запросов, недоступно из JavaScript
+      secure: true, // Используется только с HTTPS (рекомендуется для продакшена)
+      sameSite: "strict", // Политика SameSite для предотвращения CSRF
+      maxAge: 3600 * 1000, // Время жизни в миллисекундах (1 час)
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 3600 * 1000, // 7 дней
+    });
+
+    // return this.authenticationService.signin(singInDto);
+    return res.send({ message: "Успешная авторизация" });
   }
 
   @Post("/refresh")

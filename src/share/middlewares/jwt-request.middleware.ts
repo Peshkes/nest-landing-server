@@ -13,13 +13,13 @@ export class JwtRequestMiddleware implements NestMiddleware {
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
       const accessToken = req.cookies.accessToken;
-
       if (!accessToken) {
         console.log(chalk.red(`[JWT Middleware] No access token found for ${req.method} ${req.originalUrl}`));
         return res.status(401).json({ message: "Отсутствует токен доступа" });
       }
 
       const jwtDecoded = this.jwtService.verifyToken(accessToken, false);
+      console.log(" token decoded" + jwtDecoded);
       const user: User | null = await UserModel.findById(jwtDecoded.userId);
 
       if (!user) {

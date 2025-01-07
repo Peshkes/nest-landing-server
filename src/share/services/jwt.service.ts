@@ -17,6 +17,7 @@ export class JwtService {
   };
 
   verifyToken = (token: string, isRefresh: boolean): JwtTokenPayload => {
+    console.log("verify started");
     const key = isRefresh ? this.REFRESH_TOKEN_SECRET : this.ACCESS_TOKEN_SECRET;
     try {
       const jwtPayload = jwt.verify(token, key) as JwtTokenPayload;
