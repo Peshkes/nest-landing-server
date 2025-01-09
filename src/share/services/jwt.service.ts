@@ -1,14 +1,15 @@
 import jwt from "jsonwebtoken";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import crypto from "crypto";
 import { JwtTokenPayload } from "../../authentication/authentication.types";
+import SecretStorage from "../../authentication/service/SecretStorage";
 
 @Injectable()
 export class JwtService {
+  private secretStorage = SecretStorage.getInstance();
   private ACCESS_EXPIRATION_TIME = 300;
   private REFRESH_EXPIRATION_TIME = 900;
-  private ACCESS_TOKEN_SECRET = crypto.randomBytes(64).toString("hex");
-  private REFRESH_TOKEN_SECRET = crypto.randomBytes(64).toString("hex");
+  private ACCESS_TOKEN_SECRET = this.secretStorage.getAccessTokenSecret();
+  private REFRESH_TOKEN_SECRET = this.secretStorage.getRefreshTokenSecret();
 
   generateToken = (_id: string, ACCESS_TOKEN_SECRET: string, expirationTime: number) => {
     return jwt.sign({ userId: _id }, ACCESS_TOKEN_SECRET, {
@@ -17,7 +18,6 @@ export class JwtService {
   };
 
   verifyToken = (token: string, isRefresh: boolean): JwtTokenPayload => {
-    console.log("verify started");
     const key = isRefresh ? this.REFRESH_TOKEN_SECRET : this.ACCESS_TOKEN_SECRET;
     try {
       const jwtPayload = jwt.verify(token, key) as JwtTokenPayload;

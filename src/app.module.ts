@@ -19,7 +19,6 @@ import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.mi
     AuthenticationModule,
     GroupModule,
     ShareModule,
-    //SubscriptionModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })

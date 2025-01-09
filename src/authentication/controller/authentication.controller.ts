@@ -20,29 +20,29 @@ export class AuthenticationController {
 
   @Post("/registration")
   registration(@Body() registrationDto: RegistrationDto) {
+    console.log("registration started");
     return this.authenticationService.registration(registrationDto);
   }
 
   @Post("/signin")
   async signin(@Body() singInDto: SignInDto, @Res() res: Response) {
-    const tokens = await this.authenticationService.signin(singInDto);
+    const result = await this.authenticationService.signin(singInDto);
 
-    res.cookie("accessToken", tokens.accessToken, {
-      httpOnly: true, // Только для HTTP-запросов, недоступно из JavaScript
-      secure: true, // Используется только с HTTPS (рекомендуется для продакшена)
-      sameSite: "strict", // Политика SameSite для предотвращения CSRF
-      maxAge: 3600 * 1000, // Время жизни в миллисекундах (1 час)
+    res.cookie("accessToken", result.tokens.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 3600 * 1000,
     });
 
-    res.cookie("refreshToken", tokens.refreshToken, {
+    res.cookie("refreshToken", result.tokens.refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
       maxAge: 7 * 24 * 3600 * 1000, // 7 дней
     });
 
-    // return this.authenticationService.signin(singInDto);
-    return res.send({ message: "Успешная авторизация" });
+    return res.send({ message: "Успешная авторизация", email: singInDto.email, name: result.name });
   }
 
   @Post("/refresh")

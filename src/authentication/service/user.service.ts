@@ -135,6 +135,7 @@ export class UserService {
     if (!account) throw new BadRequestException("Пользователь не найден");
     if (account && !account.subscription) {
       try {
+        console.log("subscription started in user");
         await UserModel.updateOne(
           { account: account._id },
           {

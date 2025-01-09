@@ -3,7 +3,7 @@ import { SignInDto } from "../dto/sign-in.dto";
 import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import UserModel from "../persistence/userModel";
-import { JwtTokenPayload, Roles, User } from "../authentication.types";
+import { JwtTokenPayload, User } from "../authentication.types";
 import { JwtService } from "../../share/services/jwt.service";
 
 @Injectable()
@@ -17,15 +17,14 @@ export class AuthenticationService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new UserModel({
-      superUser: true,
+      superUser: false,
       name,
       email,
       password: hashedPassword,
-      role: Roles.USER,
       lastPasswords: [],
       subscription: null,
-      publicOffers: [],
-      draftOffers: [],
+      public_offers: [],
+      draft_offers: [],
     });
 
     await newUser.save();
@@ -42,7 +41,7 @@ export class AuthenticationService {
     const isPasswordCorrect = await bcrypt.compare(singInDto.password, existingUser.password);
 
     if (!isPasswordCorrect) throw new BadRequestException("Неверный пароль");
-    return this.jwtService.generateTokenPair(existingUser._id.toString());
+    return { tokens: this.jwtService.generateTokenPair(existingUser._id.toString()), name: existingUser.name };
   }
 
   refresh(token: string) {
