@@ -1,9 +1,8 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
-import { RuntimeException } from "@nestjs/core/errors/exceptions";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import GroupModel from "../persistanse/group.model";
 import GroupAccessModel from "../persistanse/group-access.model";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, Group, GroupAccess, Roles } from "../group.types";
+import { FullGroupData, GroupAccess, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
@@ -14,6 +13,7 @@ import bcrypt from "bcryptjs";
 import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
 import { UserService } from "../../authentication/service/user.service";
+import { ClientSession } from "mongoose";
 
 @Injectable()
 export class GroupService {
@@ -25,9 +25,7 @@ export class GroupService {
 
   async getGroup(group_id: string) {
     try {
-      const group: Group = await GroupModel.findById(group_id);
-      if (!group) throw new NotFoundException(`Группа с ID ${group_id} не найдена`);
-      return group;
+      return await this.findGroupById(group_id);
     } catch (error: any) {
       throw GroupException.GetGroupException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -80,12 +78,8 @@ export class GroupService {
     }
   }
 
-  async createGroup(user_id: string, addGroupDto: AddGroupDto) {
-    const session = await GroupModel.startSession();
-
-    try {
-      session.startTransaction();
-
+  async createGroup(user_id: string, addGroupDto: AddGroupDto): Promise<string> {
+    return this.runTransaction(async (session) => {
       const createdGroup = await new GroupModel({
         name: addGroupDto.name,
       }).save({ session });
@@ -96,18 +90,17 @@ export class GroupService {
         role: Roles.ADMIN,
       }).save({ session });
 
-      await session.commitTransaction();
       return createdGroup._id;
-    } catch (error: any) {
-      await session.abortTransaction();
-      throw GroupException.CreateGroupException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.CreateGroupException);
   }
 
-  async startAddingMember(group_id: string, groupMember: GroupMemberDto) {
-    try {
+  async startAddingMember(group_id: string, groupMember: GroupMemberDto): Promise<void> {
+    return this.runTransaction(async (session) => {
+      await this.findGroupById(group_id, session);
+      const existingMember = await GroupAccessModel.findOne({ group_id, user_id: groupMember.user_id });
+      if (existingMember) {
+        throw new BadRequestException("Пользователь уже является участником группы");
+      }
       const token = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
       await new AddUserToGroupTokenModel({
         group_id,
@@ -117,9 +110,7 @@ export class GroupService {
       }).save();
 
       await this.sendAddMemberEmail(groupMember.email, group_id, token);
-    } catch (error: any) {
-      throw GroupException.StartAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    }, GroupException.StartAddingMemberException);
   }
 
   private async sendAddMemberEmail(email: string, userId: string, token: string) {
@@ -132,12 +123,8 @@ export class GroupService {
   }
 
   async finishAddingMember(user_id: string, token: string): Promise<void> {
-    const session = await GroupAccessModel.startSession();
-
-    try {
-      session.startTransaction();
-
-      const addRecord = await AddUserToGroupTokenModel.findOne({ user_id }).session(session);
+    return this.runTransaction(async (session) => {
+      const addRecord = await AddUserToGroupTokenModel.findOne({ token }).session(session);
       if (!addRecord) throw new BadRequestException("Токен для добавления некорректен или истек");
 
       if (!(await bcrypt.compare(token, addRecord.token))) throw new BadRequestException("Токен для добавления некорректен или истек");
@@ -149,102 +136,58 @@ export class GroupService {
       }).save({ session });
 
       await AddUserToGroupTokenModel.deleteOne({ _id: addRecord._id }).session(session);
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.FinishAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.FinishAddingMemberException);
   }
 
-  async createDraftOffer(group_id: string, addOfferData: DraftOfferDto) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new RuntimeException(`Группа с ID ${group_id} не найдена`);
+  async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
 
       const draftOfferId = await this.offerService.addNewOffer(addOfferData, session);
       group.draft_offers.push(draftOfferId);
 
       await group.save({ session });
-      await session.commitTransaction();
       return draftOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.CreateDraftException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.CreateDraftException);
   }
 
-  async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const publicOfferId = await this.offerService.publishOfferWithoutDraft(offer, session);
       group.public_offers.push(publicOfferId);
 
       await group.save({ session });
-      await session.commitTransaction();
       return publicOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.PublishOfferWithoutDraftException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.PublishOfferWithoutDraftException);
   }
 
-  async publishDraftOffer(group_id: string, offer_id: string) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const publicOfferId = await this.offerService.publishOfferFromDraft(offer_id, session);
       group.public_offers.push(publicOfferId);
       group.draft_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
 
       await group.save({ session });
-      await session.commitTransaction();
       return publicOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.PublishDraftException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.PublishDraftException);
   }
 
   async copyOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const newPublicOfferIds: string[] = [];
       const newDraftOfferIds: string[] = [];
 
       if (moveOffersRequestDto.publicOffersToMove?.length) {
         const publicOffersToCopy = moveOffersRequestDto.publicOffersToMove.filter((offerId) => group.public_offers.includes(offerId));
-
         const newOfferIds = await this.offerService.duplicatePublicOffers(publicOffersToCopy, session);
         newPublicOfferIds.push(...newOfferIds);
       }
 
       if (moveOffersRequestDto.draftOffersToMove?.length) {
         const draftOffersToCopy = moveOffersRequestDto.draftOffersToMove.filter((offerId) => group.draft_offers.includes(offerId));
-
         const newOfferIds = await this.offerService.duplicateDraftOffers(draftOffersToCopy, session);
         newDraftOfferIds.push(...newOfferIds);
       }
@@ -255,24 +198,13 @@ export class GroupService {
         session,
       );
 
-      await session.commitTransaction();
-      return { newPublicOfferIds, newDraftOfferIds }; // Возвращаем новые ID
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
-    }
+      return { newPublicOfferIds, newDraftOfferIds };
+    }, GroupException.CopyOfferToUserException);
   }
 
-  async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto): Promise<void> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const publicOffersToMove: string[] = [];
       const draftOffersToMove: string[] = [];
 
@@ -295,98 +227,52 @@ export class GroupService {
       await this.userService.addOffersIdsToUser(user_id, { publicOffersToMove, draftOffersToMove }, session);
 
       await group.save({ session });
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.MoveOfferToUserException);
   }
 
-  async unpublishPublicOffer(group_id: string, offer_id: string) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.unpublishPublicOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
       group.public_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
 
       await group.save({ session });
-      await session.commitTransaction();
       return draftOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.UnpublishPublicException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.UnpublishPublicException);
   }
 
-  async draftifyPublicOffer(group_id: string, offer_id: string) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.draftifyPublicOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
 
       await group.save({ session });
-      await session.commitTransaction();
       return draftOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.DraftifyPublicException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.DraftifyPublicException);
   }
 
-  async duplicateDraftOffer(group_id: string, offer_id: string) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.duplicateDraftOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
 
       await group.save({ session });
-      await session.commitTransaction();
       return draftOfferId;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.DraftifyPublicException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.DuplicateDraftException);
   }
 
-  async removeOfferFromGroup(group_id: string, offer_id: string) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
+  async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const draftOffer = await this.offerService.deleteDraftOfferById(offer_id, session);
       group.public_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
 
       await group.save({ session });
-      await session.commitTransaction();
       return draftOffer;
-    } catch (error) {
-      await session.abortTransaction();
-      throw GroupException.UnpublishPublicException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    }, GroupException.UnpublishPublicException);
   }
 
   async removeUserFromGroup(group_id: string, user_id: string): Promise<GroupAccess> {
@@ -403,19 +289,13 @@ export class GroupService {
   }
 
   async deleteGroup(group_id: string): Promise<FullGroupData> {
-    const session = await GroupModel.startSession();
-
-    try {
-      session.startTransaction();
-
-      const group = await GroupModel.findById(group_id).session(session);
-      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
+    return this.runTransaction(async (session) => {
+      const group = await this.findGroupById(group_id, session);
       const groupAccesses = await GroupAccessModel.find({ group_id }).session(session);
 
       await GroupAccessModel.deleteMany({ group_id }).session(session);
       await GroupModel.deleteOne({ _id: group_id }).session(session);
 
-      await session.commitTransaction();
       return {
         group: {
           _id: group._id,
@@ -426,11 +306,30 @@ export class GroupService {
         },
         groupAccesses,
       };
-    } catch (error: any) {
+    }, GroupException.DeleteGroupException);
+  }
+
+  private async runTransaction(
+    callback: (session: ClientSession) => Promise<any>,
+    customError: (message: string, status?: HttpStatus) => HttpException,
+  ) {
+    const session = await GroupModel.startSession();
+    try {
+      session.startTransaction();
+      const result = await callback(session);
+      await session.commitTransaction();
+      return result;
+    } catch (error) {
       await session.abortTransaction();
-      throw GroupException.DeleteGroupException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw customError(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     } finally {
       await session.endSession();
     }
+  }
+
+  private async findGroupById(group_id: string, session: ClientSession = undefined) {
+    const group = await GroupModel.findById(group_id).session(session);
+    if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
+    return group;
   }
 }
