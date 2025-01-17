@@ -1,16 +1,24 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
-const draftOffer = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const draftOfferSchema = new mongoose.Schema(
+  {
+    _id: {
+      type: String,
+      default: uuidv4,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    body: {
+      type: [mongoose.Schema.Types.Mixed],
+      required: true,
+    },
   },
-  body: {
-    type: [mongoose.Schema.Types.Mixed],
-    required: true,
-  },
-});
+  { _id: false },
+);
 
-const DraftOfferModel = mongoose.model("DraftOffer", draftOffer);
+const DraftOfferModel = mongoose.model("DraftOffer", draftOfferSchema);
 
 export default DraftOfferModel;

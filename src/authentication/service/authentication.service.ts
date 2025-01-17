@@ -3,7 +3,7 @@ import { SignInDto } from "../dto/sign-in.dto";
 import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import UserModel from "../persistence/userModel";
-import { JwtTokenPayload, Roles, User } from "../authentication.types";
+import { JwtTokenPayload, User } from "../authentication.types";
 import { JwtService } from "../../share/services/jwt.service";
 
 @Injectable()
@@ -21,7 +21,6 @@ export class AuthenticationService {
       name,
       email,
       password: hashedPassword,
-      role: Roles.USER,
       lastPasswords: [],
       subscription: null,
       publicOffers: [],

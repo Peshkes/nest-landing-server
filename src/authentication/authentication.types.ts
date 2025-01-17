@@ -40,17 +40,6 @@ export type JwtTokenPayload = {
   userId: string;
 };
 
-export type AccessPayload = {
-  accountId: string;
-  role: Roles;
-};
-
-export enum Roles {
-  USER = 10,
-  MODERATOR = 20,
-  ADMIN = 30,
-}
-
 export type MoveOffersRequest = {
   publicOffersToMove: string[];
   draftOffersToMove: string[];
@@ -70,5 +59,3 @@ export type ResetPasswordObject = {
   token: string;
   newPassword: string;
 };
-
-export type GroupAccess = Map<string, Roles>;

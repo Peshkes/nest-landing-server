@@ -2,14 +2,14 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import UserModel from "../persistence/userModel";
 import { User } from "../authentication.types";
 import { RuntimeException } from "@nestjs/core/errors/exceptions";
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import { PasswordDto } from "../dto/password.dto";
 import bcrypt from "bcryptjs";
 import { EmailDto } from "../dto/email.dto";
 import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
 import ChangePasswordTokenModel from "../persistence/changePasswordTokenModel";
-import { MoveOffersRequestDto } from "../dto/move-offers-request.dto";
+import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 
 @Injectable()
 export class UserService {
@@ -104,8 +104,7 @@ export class UserService {
 
   private async sendResetPasswordEmail(email: string, userId: string, token: string) {
     const link = `localhost:27000/account/reset_password/${userId}/${token}`;
-    await this.mailService.sendMailWithHtml(
-      "no-reply@snapitch.com",
+    await this.mailService.sendMailWithHtmlFromNoReply(
       email,
       "Запрос на сброс пароля",
       `<b>Для сброса пароля пожалуйста пройдите по <a href="${link && link}">этой ссылке</a></b>`,
@@ -125,4 +124,13 @@ export class UserService {
   async copyToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
   async moveToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+
+  async addOffersIdsToUser(
+    user_id: string,
+    param2: {
+      publicOffersToMove: string[];
+      draftOffersToMove: string[];
+    },
+    session: ClientSession,
+  ) {}
 }

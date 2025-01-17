@@ -1,6 +1,6 @@
-import { DraftOfferDto } from "./draft-offer.dto";
+import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { IsDate } from "class-validator";
-import { NOT_DATE } from "../../share/error.messages";
+import { NOT_DATE } from "../../share/share-errors.constants";
 
 export class PublicOfferDto extends DraftOfferDto {
   @IsDate({ message: NOT_DATE })
