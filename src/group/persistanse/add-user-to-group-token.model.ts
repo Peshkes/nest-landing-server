@@ -28,5 +28,5 @@ const addUserToGroupTokenSchema = new mongoose.Schema({
   },
 });
 
-const AddUserToGroupTokenModel = mongoose.model("ChangePasswordTokenSchema", addUserToGroupTokenSchema);
+const AddUserToGroupTokenModel = mongoose.model("ChangePasswordToken", addUserToGroupTokenSchema);
 export default AddUserToGroupTokenModel;

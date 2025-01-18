@@ -1,5 +1,3 @@
-import { ObjectId } from "mongoose";
-
 export type AuthenticationData = {
   email: string;
   password: string;
@@ -10,8 +8,7 @@ export type UserData = AuthenticationData & {
 };
 
 export type User = UserData & {
-  superUser: boolean;
-  _id: ObjectId;
+  _id: string;
   lastPasswords: string[];
   subscription: null;
   publicOffers: string[];
@@ -21,7 +18,7 @@ export type User = UserData & {
 export type PublicUserData = {
   email: string;
   name: string;
-  _id: ObjectId;
+  _id: string;
 };
 
 export type AuthenticationResult = {
@@ -34,10 +31,6 @@ export type CustomCookies = {
     accessToken: string;
     refreshToken: string;
   };
-};
-
-export type JwtTokenPayload = {
-  userId: string;
 };
 
 export type MoveOffersRequest = {

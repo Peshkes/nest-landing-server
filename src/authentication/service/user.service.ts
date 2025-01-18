@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import UserModel from "../persistence/userModel";
+import UserModel from "../persistence/user.model";
 import { User } from "../authentication.types";
 import { RuntimeException } from "@nestjs/core/errors/exceptions";
 import mongoose, { ClientSession } from "mongoose";
@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import { EmailDto } from "../dto/email.dto";
 import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
-import ChangePasswordTokenModel from "../persistence/changePasswordTokenModel";
+import ChangePasswordTokenModel from "../persistence/change-password-token.model";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 
 @Injectable()
@@ -31,10 +31,9 @@ export class UserService {
     }
   }
 
-  async getUser(object: string) {
-    const isObjectId = mongoose.Types.ObjectId.isValid(object);
+  async getUser(id: string) {
     try {
-      const account: User | null = isObjectId ? await UserModel.findById(object) : await UserModel.findOne({ email: object });
+      const account = await UserModel.findById(id);
       if (!account) throw new BadRequestException("Пользователся с таким имейлом не найдено");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {
@@ -53,9 +52,8 @@ export class UserService {
   }
 
   async updatePassword(object: string, passwordDto: PasswordDto) {
-    const isObjectId = mongoose.Types.ObjectId.isValid(object);
     try {
-      const account: User | null = isObjectId ? await UserModel.findById(object) : await UserModel.findOne({ email: object });
+      const account: User = await UserModel.findById(id);
 
       if (!account) throw new BadRequestException("Пользователь не найден");
 
@@ -125,12 +123,5 @@ export class UserService {
 
   async moveToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
-  async addOffersIdsToUser(
-    user_id: string,
-    param2: {
-      publicOffersToMove: string[];
-      draftOffersToMove: string[];
-    },
-    session: ClientSession,
-  ) {}
+  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
 }

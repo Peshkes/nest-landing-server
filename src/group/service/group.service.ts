@@ -14,6 +14,7 @@ import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
 import { UserService } from "../../authentication/service/user.service";
 import { ClientSession } from "mongoose";
+import { runSession } from "../../share/functions/runSession";
 
 @Injectable()
 export class GroupService {
@@ -86,7 +87,7 @@ export class GroupService {
   }
 
   async createGroup(user_id: string, addGroupDto: AddGroupDto): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const createdGroup = await new GroupModel({
         name: addGroupDto.name,
       }).save({ session });
@@ -102,7 +103,7 @@ export class GroupService {
   }
 
   async startAddingMember(group_id: string, groupMember: GroupMemberDto): Promise<void> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       await this.findGroupById(group_id, session);
       const existingMember = await GroupAccessModel.findOne({ group_id, user_id: groupMember.user_id });
       if (existingMember) {
@@ -130,7 +131,7 @@ export class GroupService {
   }
 
   async finishAddingMember(user_id: string, token: string): Promise<void> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const addRecord = await AddUserToGroupTokenModel.findOne({ token }).session(session);
       if (!addRecord) throw new BadRequestException("Токен для добавления некорректен или истек");
 
@@ -147,7 +148,7 @@ export class GroupService {
   }
 
   async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
 
       const draftOfferId = await this.offerService.addNewOffer(addOfferData, session);
@@ -159,7 +160,7 @@ export class GroupService {
   }
 
   async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const publicOfferId = await this.offerService.publishOfferWithoutDraft(offer, session);
       group.public_offers.push(publicOfferId);
@@ -170,7 +171,7 @@ export class GroupService {
   }
 
   async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const publicOfferId = await this.offerService.publishOfferFromDraft(offer_id, session);
       group.public_offers.push(publicOfferId);
@@ -182,7 +183,7 @@ export class GroupService {
   }
 
   async copyOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const newPublicOfferIds: string[] = [];
       const newDraftOfferIds: string[] = [];
@@ -210,7 +211,7 @@ export class GroupService {
   }
 
   async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto): Promise<void> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const publicOffersToMove: string[] = [];
       const draftOffersToMove: string[] = [];
@@ -238,7 +239,7 @@ export class GroupService {
   }
 
   async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.unpublishPublicOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
@@ -250,7 +251,7 @@ export class GroupService {
   }
 
   async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.draftifyPublicOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
@@ -261,7 +262,7 @@ export class GroupService {
   }
 
   async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.duplicateDraftOffer(offer_id, session);
       group.draft_offers.push(draftOfferId);
@@ -272,7 +273,7 @@ export class GroupService {
   }
 
   async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const draftOffer = await this.offerService.deleteDraftOfferById(offer_id, session);
       group.public_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
@@ -296,7 +297,7 @@ export class GroupService {
   }
 
   async deleteGroup(group_id: string): Promise<FullGroupData> {
-    return this.runTransaction(async (session) => {
+    return this.runGroupSession(async (session) => {
       const group = await this.findGroupById(group_id, session);
       const groupAccesses = await GroupAccessModel.find({ group_id }).session(session);
 
@@ -327,22 +328,11 @@ export class GroupService {
     }
   }
 
-  private async runTransaction(
+  private async runGroupSession(
     callback: (session: ClientSession) => Promise<any>,
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
-    const session = await GroupModel.startSession();
-    try {
-      session.startTransaction();
-      const result = await callback(session);
-      await session.commitTransaction();
-      return result;
-    } catch (error) {
-      await session.abortTransaction();
-      throw customError(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await session.endSession();
-    }
+    return await runSession(GroupModel, callback, customError);
   }
 
   private async findGroupById(group_id: string, session: ClientSession = undefined) {

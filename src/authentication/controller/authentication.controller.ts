@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
 import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
 import { SignInDto } from "../dto/sign-in.dto";
 import { CsrfService } from "../../share/services/csrf.service";
+import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 
 @Controller("auth")
 export class AuthenticationController {
@@ -26,6 +27,12 @@ export class AuthenticationController {
   @Post("/signin")
   signin(@Body() singInDto: SignInDto) {
     return this.authenticationService.signin(singInDto);
+  }
+
+  @Post("/super/signin")
+  @UseGuards(SuperUserAccessGuard)
+  superSignin(@Body() singInDto: SignInDto) {
+    return this.authenticationService.superSignin(singInDto);
   }
 
   @Post("/refresh")

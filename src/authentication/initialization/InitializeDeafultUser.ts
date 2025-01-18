@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import userModel from "../persistence/userModel";
-import UserModel from "../persistence/userModel";
+import userModel from "../persistence/user.model";
+import UserModel from "../persistence/user.model";
 import { Roles } from "../authentication.types";
 
 export const createAdminUser = async () => {

@@ -2,9 +2,10 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { SignInDto } from "../dto/sign-in.dto";
 import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
-import UserModel from "../persistence/userModel";
-import { JwtTokenPayload, User } from "../authentication.types";
+import UserModel from "../persistence/user.model";
 import { JwtService } from "../../share/services/jwt.service";
+import SuperUserModel from "../persistence/super-user.model";
+import { JwtTokenPayload } from "../../share/share.types";
 
 @Injectable()
 export class AuthenticationService {
@@ -21,10 +22,7 @@ export class AuthenticationService {
       name,
       email,
       password: hashedPassword,
-      lastPasswords: [],
       subscription: null,
-      publicOffers: [],
-      draftOffers: [],
     });
 
     await newUser.save();
@@ -33,20 +31,30 @@ export class AuthenticationService {
   }
 
   async signin(singInDto: SignInDto) {
-    const existingUser: User | null = await UserModel.findOne({
-      email: singInDto.email,
-    });
-    if (!existingUser) throw new BadRequestException("Пользователь с имейлом " + singInDto.email + " не найден");
+    const user = await UserModel.findOne({ email: singInDto.email });
+    if (!user) throw new BadRequestException("Пользователь с имейлом " + singInDto.email + " не найден");
+    return this.processSignin(user._id, user.password, singInDto.password);
+  }
 
-    const isPasswordCorrect = await bcrypt.compare(singInDto.password, existingUser.password);
+  async superSignin(singInDto: SignInDto) {
+    const user = await SuperUserModel.findOne({ email: singInDto.email });
+    if (!user) throw new BadRequestException("Пользователь с имейлом " + singInDto.email + " не найден");
+    return this.processSignin(user._id, user.password, singInDto.password, true);
+  }
 
+  private async processSignin(id: string, firstPass: string, secondPass: string, isSuperUser: boolean = false) {
+    await this.checkPassword(firstPass, secondPass);
+    return this.jwtService.generateTokenPair(id, isSuperUser);
+  }
+
+  private async checkPassword(firstPassword: string, secondPassword: string) {
+    const isPasswordCorrect = await bcrypt.compare(firstPassword, secondPassword);
     if (!isPasswordCorrect) throw new BadRequestException("Неверный пароль");
-    return this.jwtService.generateTokenPair(existingUser._id.toString());
   }
 
   refresh(token: string) {
     if (!token) throw new BadRequestException("Токен не пришел ");
-    const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token, true);
+    const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token);
     return this.jwtService.generateTokenPair(decodedToken.userId);
   }
 }

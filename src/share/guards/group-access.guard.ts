@@ -1,6 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
-import { User } from "../../authentication/authentication.types";
 import GroupAccessModel from "../../group/persistanse/group-access.model";
 import { Roles } from "../../group/group.types";
 
@@ -9,14 +8,12 @@ export class GroupAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const user: User = request.user;
-
-    if (user.superUser) return true;
+    if (request.superAccess) return true;
 
     const groupId = request.params.group_id;
     if (!groupId) return false;
 
-    const role = await this.getClientRole(user._id.toString(), groupId);
+    const role = await this.getClientRole(request.user._id.toString(), groupId);
     return role && role >= this.minRole;
   }
 

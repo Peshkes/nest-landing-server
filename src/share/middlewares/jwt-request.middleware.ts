@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import UserModel from "../../authentication/persistence/userModel";
+import UserModel from "../../authentication/persistence/user.model";
 import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../services/jwt.service";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
@@ -19,7 +19,7 @@ export class JwtRequestMiddleware implements NestMiddleware {
         return res.status(401).json({ message: "Отсутствует токен доступа" });
       }
 
-      const jwtDecoded = this.jwtService.verifyToken(accessToken, false);
+      const jwtDecoded = this.jwtService.verifyToken(accessToken);
       const user: User | null = await UserModel.findById(jwtDecoded.userId);
 
       if (!user) {
@@ -28,6 +28,7 @@ export class JwtRequestMiddleware implements NestMiddleware {
       } else {
         console.log(chalk.red(`[JWT Middleware] User authorized: ${user._id} for ${req.method} ${req.originalUrl}`));
         req.user = user;
+        if (jwtDecoded.superAccess) req.superAccess = true;
         next();
       }
     } catch (error: any) {
