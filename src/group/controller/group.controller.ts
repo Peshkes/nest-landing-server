@@ -32,13 +32,13 @@ export class GroupController {
 
   @Post("/start/:group_id")
   @UseGuards(AdminAccessGuard)
-  async startAddingMember(@Param("group_id") group_id: string, @Body() groupMember: GroupMemberDto) {
+  async startAddingMember(@Param("group_id") group_id: string, @Body() groupMember: GroupMemberDto): Promise<void> {
     await this.groupService.startAddingMember(group_id, groupMember);
   }
 
   @Post("/finish/:id/:token")
   @UseGuards(OwnerAccessGuard)
-  async finishAddingMember(@Param("id") user_id: string, @Param("token") token: string) {
+  async finishAddingMember(@Param("id") user_id: string, @Param("token") token: string): Promise<void> {
     await this.groupService.finishAddingMember(user_id, token);
   }
 
@@ -54,6 +54,12 @@ export class GroupController {
     return await this.groupService.publishOfferWithoutDraft(group_id, offer);
   }
 
+  @Put("/settings/:group_id")
+  @UseGuards(ModeratorAccessGuard)
+  async updateSettings(@Param("group_id") group_id: string, @Body() settings: object): Promise<object> {
+    return await this.groupService.updateSettings(group_id, settings);
+  }
+
   @Put("/offer/publish/:group_id/:offer_id")
   @UseGuards(ModeratorAccessGuard)
   async publishDraftOffer(@Param("group_id") group_id: string, @Param("offer_id") offer_id: string): Promise<string> {
@@ -66,7 +72,7 @@ export class GroupController {
     @Param("group_id") group_id: string,
     @Param("id") user_id: string,
     @Body() moveOffersRequestDto: MoveOffersRequestDto,
-  ) {
+  ): Promise<void> {
     await this.groupService.copyOffersToUser(group_id, user_id, moveOffersRequestDto);
   }
 
@@ -76,7 +82,7 @@ export class GroupController {
     @Param("group_id") group_id: string,
     @Param("id") user_id: string,
     @Body() moveOffersRequestDto: MoveOffersRequestDto,
-  ) {
+  ): Promise<void> {
     await this.groupService.moveOffersToUser(group_id, user_id, moveOffersRequestDto);
   }
 

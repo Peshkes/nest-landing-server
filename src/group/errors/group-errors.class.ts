@@ -14,6 +14,7 @@ export class GroupErrors {
   public static readonly PUT_UNPUBLISH_PUBLIC = "Ошибка при снятии оффера с публикации: ";
   public static readonly PUT_DRAFTIFY_PUBLIC = "Ошибка при создании черновика из публичного оффера: ";
   public static readonly PUT_DUPLICATE_DRAFT = "Ошибка при дублировании черновика: ";
+  public static readonly PUT_UPDATE_SETTINGS = "Ошибка при обновлении настроек";
 
   public static readonly DELETE_DRAFT_OFFER = "Ошибка при удалении черновика из группы: ";
   public static readonly DELETE_USER = "Ошибка при удалении пользователя из группы: ";

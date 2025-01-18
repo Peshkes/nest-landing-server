@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nes
 import GroupModel from "../persistanse/group.model";
 import GroupAccessModel from "../persistanse/group-access.model";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, GroupAccess, Roles } from "../group.types";
+import { FullGroupData, Group, GroupAccess, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
@@ -23,9 +23,16 @@ export class GroupService {
     private readonly userService: UserService,
   ) {}
 
-  async getGroup(group_id: string) {
+  async getGroup(group_id: string): Promise<Group> {
     try {
-      return await this.findGroupById(group_id);
+      const group = await this.findGroupById(group_id);
+      return {
+        _id: group._id,
+        name: group.name,
+        draftOffers: group.draft_offers,
+        publicOffers: group.public_offers,
+        settings: group.settings,
+      };
     } catch (error: any) {
       throw GroupException.GetGroupException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -272,7 +279,7 @@ export class GroupService {
 
       await group.save({ session });
       return draftOffer;
-    }, GroupException.UnpublishPublicException);
+    }, GroupException.DeleteDraftOfferException);
   }
 
   async removeUserFromGroup(group_id: string, user_id: string): Promise<GroupAccess> {
@@ -307,6 +314,17 @@ export class GroupService {
         groupAccesses,
       };
     }, GroupException.DeleteGroupException);
+  }
+
+  async updateSettings(group_id: string, settings: object) {
+    try {
+      const group = await this.findGroupById(group_id);
+      group.settings = settings;
+      group.save();
+      return settings;
+    } catch (error) {
+      throw GroupException.UpdateSettingsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   private async runTransaction(

@@ -54,6 +54,10 @@ export class GroupException {
     return new HttpException(GroupErrors.PUT_DUPLICATE_DRAFT + message, status);
   }
 
+  static UpdateSettingsException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(GroupErrors.PUT_UPDATE_SETTINGS + message, status);
+  }
+
   static DeleteDraftOfferException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(GroupErrors.DELETE_DRAFT_OFFER + message, status);
   }

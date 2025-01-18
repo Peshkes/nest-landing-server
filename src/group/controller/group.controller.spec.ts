@@ -479,4 +479,30 @@ describe("GroupController", () => {
       }
     });
   });
+
+  describe("updateSettings", () => {
+    it("should update settings successfully", async () => {
+      const groupId = "1";
+      const settings = { cat: "myau" };
+
+      jest.spyOn(service, "updateSettings").mockResolvedValue(settings);
+      const result = await controller.updateSettings(groupId, settings);
+      expect(result).toEqual(settings);
+      expect(service.updateSettings).toHaveBeenCalledWith(groupId, settings);
+    });
+
+    it("should throw an error if update settings fails", async () => {
+      const groupId = "1";
+      const settings = { cat: "myau" };
+
+      jest.spyOn(service, "updateSettings").mockRejectedValue(new Error("Failed to update settings"));
+
+      try {
+        await controller.updateSettings(groupId, settings);
+      } catch (error) {
+        expect(error.response).toBe(GroupErrors.PUT_UPDATE_SETTINGS + "Failed to update settings");
+        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    });
+  });
 });
