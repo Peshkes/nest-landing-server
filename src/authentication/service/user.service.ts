@@ -6,15 +6,21 @@ import mongoose, { ClientSession } from "mongoose";
 import { PasswordDto } from "../dto/password.dto";
 import bcrypt from "bcryptjs";
 import { EmailDto } from "../dto/email.dto";
-import { MailService } from "../../share/services/mailing.service";
+
 import crypto from "crypto";
 import ChangePasswordTokenModel from "../persistence/change-password-token.model";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
+import { SubscriptionDto } from "../../share/dto/SubscriptionDto";
+import { MailService } from "../../share/services/mailing.service";
+import { SubscriptionService } from "../../subscription/service/subscription.service";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly mailService: MailService) {}
+  constructor(
+    private readonly mailService: MailService,
+    private readonly subscriptionService: SubscriptionService,
+  ) {}
 
   async getAllUsers() {
     try {
@@ -69,11 +75,13 @@ export class UserService {
       lastPasswords.unshift(account.password);
       if (lastPasswords.length > 3) lastPasswords.pop();
 
-      await UserModel.updateOne({
-        account: account._id,
-        password: await bcrypt.hash(passwordDto.password, 10),
-        lastPasswords: lastPasswords,
-      });
+      await UserModel.updateOne(
+        { account: account._id },
+        {
+          password: await bcrypt.hash(passwordDto.password, 10),
+          lastPasswords: lastPasswords,
+        },
+      );
     } catch (error: any) {
       throw new RuntimeException(`Ошибка при обновлении пароля: ${error.message}`);
     }
@@ -118,6 +126,24 @@ export class UserService {
       throw new BadRequestException("Токен смены пароля некорректен или истек");
     await this.updatePassword(id, passwordDto);
     await ChangePasswordTokenModel.findByIdAndDelete(id);
+  }
+
+  async addSubscription(id: string, subscription: SubscriptionDto) {
+    const account: User | null = await UserModel.findById(id);
+    if (!account) throw new BadRequestException("Пользователь не найден");
+    if (account && !account.subscription) {
+      try {
+        console.log("subscription started in user");
+        await UserModel.updateOne(
+          { account: account._id },
+          {
+            subscription: await this.subscriptionService.createNewSubscription(subscription),
+          },
+        );
+      } catch (error: any) {
+        throw new RuntimeException(`Ошибка при добвлении подписки: ${error.message}`);
+      }
+    }
   }
 
   async copyToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}

@@ -8,6 +8,7 @@ import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { User } from "../authentication.types";
+import { SubscriptionDto } from "../../share/dto/SubscriptionDto";
 
 @Controller("user")
 export class UserController {
@@ -99,5 +100,12 @@ export class UserController {
   @UseGuards(OwnerAccessGuard)
   async removeUser(@Param("id") id: string): Promise<User> {
     return await this.userService.removeUser(id);
+  }
+
+  @Put("/subscribe/:id")
+  @UseGuards(OwnerAccessGuard)
+  async addSubscription(@Param("id") id: string, @Body() subscription: SubscriptionDto) {
+    console.log("subscription started in user controller");
+    await this.userService.addSubscription(id, subscription);
   }
 }

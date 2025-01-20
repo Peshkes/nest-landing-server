@@ -4,7 +4,7 @@ import { TierServiceSales } from "../service/tier.service.sales";
 import { SalesTierDto } from "../dto/tier.sales.dto";
 
 @Controller("sales_tier")
-export class TierControllerBase {
+export class TierControllerSales {
   constructor(private readonly tierSalesService: TierServiceSales) {}
 
   @Post("")

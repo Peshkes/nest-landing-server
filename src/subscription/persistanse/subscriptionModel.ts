@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const paymentsSubSchema = new mongoose.Schema({
-  tier_id: {
+  id: {
     type: String,
     required: true,
   },
@@ -20,6 +20,10 @@ const subscriptionSchema = new mongoose.Schema({
     type: String,
     required: true,
     ref: "SalesTier",
+  },
+  key: {
+    type: String,
+    required: true,
   },
   start_date: {
     type: Date,
