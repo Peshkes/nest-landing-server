@@ -21,12 +21,29 @@ export class AuthenticationController {
 
   @Post("/registration")
   registration(@Body() registrationDto: RegistrationDto) {
+    console.log("registration started");
     return this.authenticationService.registration(registrationDto);
   }
 
   @Post("/signin")
-  signin(@Body() singInDto: SignInDto) {
-    return this.authenticationService.signin(singInDto);
+  async signin(@Body() singInDto: SignInDto, @Res() res: Response) {
+    const result = await this.authenticationService.signin(singInDto);
+
+    res.cookie("accessToken", result.tokens.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 3600 * 1000,
+    });
+
+    res.cookie("refreshToken", result.tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 3600 * 1000, // 7 дней
+    });
+
+    return res.send({ message: "Успешная авторизация", email: singInDto.email, name: result.name });
   }
 
   @Post("/super/signin")

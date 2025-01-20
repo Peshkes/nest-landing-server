@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
-import userModel from "../persistence/user.model";
-import UserModel from "../persistence/user.model";
-import { Roles } from "../authentication.types";
+import userModel from "../persistence/userModel";
+import UserModel from "../persistence/userModel";
 
 export const createAdminUser = async () => {
   if (!(await userModel.exists({ name: "admin" }))) {
@@ -12,7 +11,6 @@ export const createAdminUser = async () => {
         name: "admin",
         email: "admin@gmail.com",
         password: password,
-        role: Roles.ADMIN,
         lastPasswords: [],
         subscription: "admin",
         publicOffers: [],
