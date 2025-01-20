@@ -18,6 +18,10 @@ export class MailService {
     });
   }
 
+  async sendMailWithHtmlFromNoReply(to: string, subject: string, html: string) {
+    await this.sendMailWithHtml("no-reply@snapitch.com", to, subject, html);
+  }
+
   async sendMailWithHtml(from: string, to: string, subject: string, html: string) {
     await this.transporter.sendMail({
       from,
@@ -25,6 +29,10 @@ export class MailService {
       subject,
       html,
     });
+  }
+
+  async sendMailFromNoReply(to: string, subject: string, text: string) {
+    await this.sendMail("no-reply@snapitch.com", to, subject, text);
   }
 
   async sendMail(from: string, to: string, subject: string, text: string) {

@@ -1,5 +1,3 @@
-import { ObjectId } from "mongoose";
-
 export type AuthenticationData = {
   email: string;
   password: string;
@@ -10,8 +8,7 @@ export type UserData = AuthenticationData & {
 };
 
 export type User = UserData & {
-  superUser: boolean;
-  _id: ObjectId;
+  _id: string;
   lastPasswords: string[];
   subscription: null;
   publicOffers: string[];
@@ -21,7 +18,7 @@ export type User = UserData & {
 export type PublicUserData = {
   email: string;
   name: string;
-  _id: ObjectId;
+  _id: string;
 };
 
 export type AuthenticationResult = {
@@ -35,21 +32,6 @@ export type CustomCookies = {
     refreshToken: string;
   };
 };
-
-export type JwtTokenPayload = {
-  userId: string;
-};
-
-export type AccessPayload = {
-  accountId: string;
-  role: Roles;
-};
-
-export enum Roles {
-  USER = 10,
-  MODERATOR = 20,
-  ADMIN = 30,
-}
 
 export type MoveOffersRequest = {
   publicOffersToMove: string[];
@@ -70,5 +52,3 @@ export type ResetPasswordObject = {
   token: string;
   newPassword: string;
 };
-
-export type GroupAccess = Map<string, Roles>;

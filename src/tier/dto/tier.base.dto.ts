@@ -1,6 +1,6 @@
 import { ObjectId } from "mongoose";
 import { IsString, IsUUID } from "class-validator";
-import { ID_IS_NOT_VALID, NAME_IS_NOT_STRING } from "../../share/error.messages";
+import { ID_IS_NOT_VALID, NAME_IS_NOT_STRING } from "../../share/share-errors.constants";
 
 export class BaseTierDto {
   @IsUUID("4", { message: ID_IS_NOT_VALID })

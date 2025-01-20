@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nes
 import { OfferService } from "../service/offer.service";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
-import { DraftOfferDto } from "../dto/draft-offer.dto";
+import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { PublicOfferDto } from "../dto/public-offer.dto";
 
 @Controller("offer")

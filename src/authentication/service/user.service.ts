@@ -37,10 +37,9 @@ export class UserService {
     }
   }
 
-  async getUser(object: string) {
-    const isObjectId = mongoose.Types.ObjectId.isValid(object);
+  async getUser(id: string) {
     try {
-      const account: User | null = isObjectId ? await UserModel.findById(object) : await UserModel.findOne({ email: object });
+      const account = await UserModel.findById(id);
       if (!account) throw new BadRequestException("Пользователся с таким имейлом не найдено");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {
@@ -59,9 +58,8 @@ export class UserService {
   }
 
   async updatePassword(object: string, passwordDto: PasswordDto) {
-    const isObjectId = mongoose.Types.ObjectId.isValid(object);
     try {
-      const account: User | null = isObjectId ? await UserModel.findById(object) : await UserModel.findOne({ email: object });
+      const account: User = await UserModel.findById(id);
 
       if (!account) throw new BadRequestException("Пользователь не найден");
 
@@ -112,8 +110,7 @@ export class UserService {
 
   private async sendResetPasswordEmail(email: string, userId: string, token: string) {
     const link = `localhost:27000/account/reset_password/${userId}/${token}`;
-    await this.mailService.sendMailWithHtml(
-      "no-reply@snapitch.com",
+    await this.mailService.sendMailWithHtmlFromNoReply(
       email,
       "Запрос на сброс пароля",
       `<b>Для сброса пароля пожалуйста пройдите по <a href="${link && link}">этой ссылке</a></b>`,
@@ -151,4 +148,6 @@ export class UserService {
   async copyToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
   async moveToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+
+  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
 }
