@@ -10,6 +10,7 @@ import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
 import ChangePasswordTokenModel from "../persistence/change-password-token.model";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
+import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 
 @Injectable()
 export class UserService {
@@ -51,7 +52,7 @@ export class UserService {
     }
   }
 
-  async updatePassword(object: string, passwordDto: PasswordDto) {
+  async updatePassword(id: string, passwordDto: PasswordDto) {
     try {
       const account: User = await UserModel.findById(id);
 
@@ -124,4 +125,28 @@ export class UserService {
   async moveToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
   async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
+
+  async createDraftOffer(id: string, addOfferData: DraftOfferDto) {
+    return "";
+  }
+
+  async publishOfferWithoutDraft(id: string, offer: DraftOfferDto) {
+    return "";
+  }
+
+  async publishDraftOffer(id: string, offer_id: string) {
+    return "";
+  }
+
+  async unpublishPublicOffer(id: string, offer_id: string) {
+    return "";
+  }
+
+  async draftifyPublicOffer(id: string, offer_id: string) {
+    return "";
+  }
+
+  async duplicateDraftOffer(id: string, offer_id: string) {
+    return "";
+  }
 }
