@@ -28,7 +28,7 @@ export class OfferService {
       if (!offer) throw new Error("Коммерческого предложения с таким ID: " + id + " не найдено");
       return { name: offer.name, body: offer.body, _id: offer._id };
     } catch (error: any) {
-      throw new Error(`Ошибка при получении аккаунта: ${error.message}`);
+      throw new Error(`Ошибка при получении коммерческого предложения: ${error.message}`);
     }
   }
 
