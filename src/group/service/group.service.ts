@@ -106,18 +106,18 @@ export class GroupService {
     return this.runGroupSession(async (session) => {
       await this.findGroupById(group_id, session);
       const existingMember = await GroupAccessModel.findOne({ group_id, user_id: groupMember.user_id });
-      if (existingMember) {
-        throw new BadRequestException("Пользователь уже является участником группы");
-      }
-      const token = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
-      await new AddUserToGroupTokenModel({
-        group_id,
-        token,
-        user_id: groupMember.user_id,
-        role: groupMember.role,
-      }).save();
+      if (existingMember) throw new BadRequestException("Пользователь уже является участником группы");
 
-      await this.sendAddMemberEmail(groupMember.email, group_id, token);
+      const token = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+      await Promise.all([
+        new AddUserToGroupTokenModel({
+          group_id,
+          token,
+          user_id: groupMember.user_id,
+          role: groupMember.role,
+        }).save({ session }),
+        this.sendAddMemberEmail(groupMember.email, group_id, token),
+      ]);
     }, GroupException.StartAddingMemberException);
   }
 
@@ -137,24 +137,23 @@ export class GroupService {
 
       if (!(await bcrypt.compare(token, addRecord.token))) throw new BadRequestException("Токен для добавления некорректен или истек");
 
-      await new GroupAccessModel({
-        group_id: addRecord.group_id,
-        user_id,
-        role: addRecord.role,
-      }).save({ session });
-
-      await AddUserToGroupTokenModel.deleteOne({ _id: addRecord._id }).session(session);
+      await Promise.all([
+        new GroupAccessModel({
+          group_id: addRecord.group_id,
+          user_id,
+          role: addRecord.role,
+        }).save({ session }),
+        AddUserToGroupTokenModel.deleteOne({ _id: addRecord._id }).session(session),
+      ]);
     }, GroupException.FinishAddingMemberException);
   }
 
   async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-
       const draftOfferId = await this.offerService.addNewOffer(addOfferData, session);
-      group.draft_offers.push(draftOfferId);
+      const result = await GroupModel.updateOne({ _id: group_id }, { $push: { draft_offers: draftOfferId } }, { session });
 
-      await group.save({ session });
+      if (result.modifiedCount === 0) throw new BadRequestException(`Группа с ID ${group_id} не найдена или не обновлена`);
       return draftOfferId;
     }, GroupException.CreateDraftException);
   }
@@ -172,13 +171,17 @@ export class GroupService {
 
   async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-      const publicOfferId = await this.offerService.publishOfferFromDraft(offer_id, session);
-      group.public_offers.push(publicOfferId);
-      group.draft_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
+      const result = await GroupModel.findByIdAndUpdate(
+        group_id,
+        {
+          $push: { public_offers: offer_id },
+          $pull: { draft_offers: offer_id },
+        },
+        { new: true, session },
+      );
 
-      await group.save({ session });
-      return publicOfferId;
+      if (!result) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
+      return await this.offerService.publishOfferFromDraft(offer_id, session);
     }, GroupException.PublishDraftException);
   }
 
@@ -240,45 +243,52 @@ export class GroupService {
 
   async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.unpublishPublicOffer(offer_id, session);
-      group.draft_offers.push(draftOfferId);
-      group.public_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
+      const updateResult = await GroupModel.findByIdAndUpdate(
+        group_id,
+        {
+          $push: { draft_offers: draftOfferId },
+          $pull: { public_offers: offer_id },
+        },
+        { new: true, session },
+      );
 
-      await group.save({ session });
+      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOfferId;
     }, GroupException.UnpublishPublicException);
   }
 
   async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.draftifyPublicOffer(offer_id, session);
-      group.draft_offers.push(draftOfferId);
-
-      await group.save({ session });
+      const updateResult = await GroupModel.findByIdAndUpdate(
+        group_id,
+        {
+          $push: { draft_offers: draftOfferId },
+        },
+        { new: true, session },
+      );
+      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOfferId;
     }, GroupException.DraftifyPublicException);
   }
 
   async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
       const draftOfferId = await this.offerService.duplicateDraftOffer(offer_id, session);
-      group.draft_offers.push(draftOfferId);
+      const updateResult = await GroupModel.findByIdAndUpdate(group_id, { $push: { draft_offers: draftOfferId } }, { new: true, session });
 
-      await group.save({ session });
+      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOfferId;
     }, GroupException.DuplicateDraftException);
   }
 
   async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
       const draftOffer = await this.offerService.deleteDraftOfferById(offer_id, session);
-      group.public_offers = group.draft_offers.filter((draftId) => draftId !== offer_id);
+      const updateResult = await GroupModel.findByIdAndUpdate(group_id, { $pull: { public_offers: offer_id } }, { new: true, session });
 
-      await group.save({ session });
+      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOffer;
     }, GroupException.DeleteDraftOfferException);
   }
@@ -298,11 +308,17 @@ export class GroupService {
 
   async deleteGroup(group_id: string): Promise<FullGroupData> {
     return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-      const groupAccesses = await GroupAccessModel.find({ group_id }).session(session);
+      const [group, groupAccesses] = await Promise.all([
+        GroupModel.findById(group_id).session(session),
+        GroupAccessModel.find({ group_id }).session(session),
+      ]);
 
-      await GroupAccessModel.deleteMany({ group_id }).session(session);
-      await GroupModel.findByIdAndDelete(group_id).session(session);
+      if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
+
+      await Promise.all([
+        GroupAccessModel.deleteMany({ group_id }).session(session),
+        GroupModel.findByIdAndDelete(group_id).session(session),
+      ]);
 
       return {
         group: {
@@ -319,10 +335,10 @@ export class GroupService {
 
   async updateSettings(group_id: string, settings: object) {
     try {
-      const group = await this.findGroupById(group_id);
-      group.settings = settings;
-      group.save();
-      return settings;
+      const updatedGroup = await GroupModel.findByIdAndUpdate(group_id, { settings }, { new: true });
+
+      if (!updatedGroup) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
+      return updatedGroup.settings;
     } catch (error) {
       throw GroupException.UpdateSettingsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
