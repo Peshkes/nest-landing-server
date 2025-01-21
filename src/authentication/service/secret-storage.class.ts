@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
-class SecretStorage {
-  private static instance: SecretStorage;
+class SecretStorageClass {
+  private static instance: SecretStorageClass;
   private readonly accessTokenSecret: string;
   private readonly refreshTokenSecret: string;
 
@@ -12,11 +12,11 @@ class SecretStorage {
   }
 
   // Метод для получения единственного экземпляра
-  public static getInstance(): SecretStorage {
-    if (!SecretStorage.instance) {
-      SecretStorage.instance = new SecretStorage();
+  public static getInstance(): SecretStorageClass {
+    if (!SecretStorageClass.instance) {
+      SecretStorageClass.instance = new SecretStorageClass();
     }
-    return SecretStorage.instance;
+    return SecretStorageClass.instance;
   }
 
   // Методы для доступа к секретам
@@ -29,4 +29,4 @@ class SecretStorage {
   }
 }
 
-export default SecretStorage;
+export default SecretStorageClass;

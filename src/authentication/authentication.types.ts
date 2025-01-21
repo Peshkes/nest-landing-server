@@ -15,6 +15,16 @@ export type User = UserData & {
   draftOffers: string[];
 };
 
+export type Tokens = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type SignInResponse = {
+  user: PublicUserData;
+  tokens: Tokens;
+};
+
 export type PublicUserData = {
   email: string;
   name: string;

@@ -1,4 +1,4 @@
-import { PaymentDto } from "../../subscription/dto/PaymentDto";
+import { PaymentDto } from "../../subscription/dto/payment.dto";
 
 export class SubscriptionDto {
   //@IsUUID("4", { message: ID_IS_NOT_VALID })

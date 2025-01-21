@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
 import { Request, Response } from "express";
 import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
 import { SignInDto } from "../dto/sign-in.dto";
 import { CsrfService } from "../../share/services/csrf.service";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 
 @Controller("auth")
 export class AuthenticationController {
@@ -21,7 +20,6 @@ export class AuthenticationController {
 
   @Post("/registration")
   registration(@Body() registrationDto: RegistrationDto) {
-    console.log("registration started");
     return this.authenticationService.registration(registrationDto);
   }
 
@@ -31,25 +29,40 @@ export class AuthenticationController {
 
     res.cookie("accessToken", result.tokens.accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "strict",
       maxAge: 3600 * 1000,
     });
 
     res.cookie("refreshToken", result.tokens.refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "strict",
-      maxAge: 7 * 24 * 3600 * 1000, // 7 дней
+      maxAge: 7 * 24 * 3600 * 1000,
     });
 
-    return res.send({ message: "Успешная авторизация", email: singInDto.email, name: result.name });
+    return res.send({ message: "Успешная авторизация", user: result.user });
   }
 
   @Post("/super/signin")
-  @UseGuards(SuperUserAccessGuard)
-  superSignin(@Body() singInDto: SignInDto) {
-    return this.authenticationService.superSignin(singInDto);
+  async superSignin(@Body() singInDto: SignInDto, @Res() res: Response) {
+    const result = await this.authenticationService.superSignin(singInDto);
+
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 3600 * 1000,
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 3600 * 1000,
+    });
+
+    return res.send({ message: "Успешная авторизация" });
   }
 
   @Post("/refresh")

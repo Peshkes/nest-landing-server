@@ -14,7 +14,7 @@ import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
 import { UserService } from "../../authentication/service/user.service";
 import { ClientSession } from "mongoose";
-import { runSession } from "../../share/functions/runSession";
+import { runSession } from "../../share/functions/run-session";
 
 @Injectable()
 export class GroupService {
@@ -302,7 +302,7 @@ export class GroupService {
       const groupAccesses = await GroupAccessModel.find({ group_id }).session(session);
 
       await GroupAccessModel.deleteMany({ group_id }).session(session);
-      await GroupModel.deleteOne({ _id: group_id }).session(session);
+      await GroupModel.findByIdAndDelete(group_id).session(session);
 
       return {
         group: {

@@ -7,7 +7,7 @@ import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { AddGroupDto } from "../dto/add-group.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { FullGroupData, Group, GroupAccess, GroupPreview, Roles } from "../group.types";
-import { HttpStatus } from "@nestjs/common";
+import { HttpStatus, InternalServerErrorException } from "@nestjs/common";
 import { GroupErrors } from "../errors/group-errors.class";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 
@@ -76,13 +76,13 @@ describe("GroupController", () => {
     it("should throw a custom error if group is not found", async () => {
       const groupId = "1";
 
-      jest.spyOn(service, "getGroup").mockRejectedValue(new Error("Group not found"));
+      jest.spyOn(service, "getGroup").mockRejectedValue(new InternalServerErrorException(GroupErrors.GET_GROUP + "Group not found"));
 
       try {
         await controller.getGroup(groupId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.GET_GROUP + "Group not found");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe(GroupErrors.GET_GROUP + "Group not found");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -108,13 +108,13 @@ describe("GroupController", () => {
     it("should throw a custom error if an error occurs while fetching previews", async () => {
       const userId = "1";
 
-      jest.spyOn(service, "getGroupsPreviews").mockRejectedValue(new Error("Error fetching previews"));
+      jest.spyOn(service, "getGroupsPreviews").mockRejectedValue(new InternalServerErrorException("Error fetching previews"));
 
       try {
         await controller.getGroupsPreviews(userId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.GET_GROUPS_PREVIEWS + "Error fetching previews");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Error fetching previews");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -135,13 +135,13 @@ describe("GroupController", () => {
       const userId = "1";
       const createGroupDto: AddGroupDto = { name: "Test Group" };
 
-      jest.spyOn(service, "createGroup").mockRejectedValue(new Error("Creation failed"));
+      jest.spyOn(service, "createGroup").mockRejectedValue(new InternalServerErrorException("Creation failed"));
 
       try {
         await controller.createGroup(userId, createGroupDto);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.POST_CREATE_GROUP + "Creation failed");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Creation failed");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -161,13 +161,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const groupMember: GroupMemberDto = { user_id: "2", email: "sds@sd.ru", role: Roles.USER };
 
-      jest.spyOn(service, "startAddingMember").mockRejectedValue(new Error("Failed to start adding member"));
+      jest.spyOn(service, "startAddingMember").mockRejectedValue(new InternalServerErrorException("Failed to start adding member"));
 
       try {
         await controller.startAddingMember(groupId, groupMember);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.POST_START_ADDING_MEMBER + "Failed to start adding member");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to start adding member");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -188,13 +188,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const draftOfferDto: DraftOfferDto = { name: "Test Offer", body: {}, _id: "sdsdsd" };
 
-      jest.spyOn(service, "createDraftOffer").mockRejectedValue(new Error("Failed to create draft"));
+      jest.spyOn(service, "createDraftOffer").mockRejectedValue(new InternalServerErrorException("Failed to create draft"));
 
       try {
         await controller.createDraftOffer(groupId, draftOfferDto);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.POST_CREATE_DRAFT + "Failed to create draft");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to create draft");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -215,13 +215,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const draftOfferDto: DraftOfferDto = { name: "Test Offer", body: {}, _id: "sdsdsd" };
 
-      jest.spyOn(service, "publishOfferWithoutDraft").mockRejectedValue(new Error("Failed to publish offer"));
+      jest.spyOn(service, "publishOfferWithoutDraft").mockRejectedValue(new InternalServerErrorException("Failed to publish offer"));
 
       try {
         await controller.publishOfferWithoutDraft(groupId, draftOfferDto);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.POST_PUBLISH_OFFER_WITHOUT_DRAFT + "Failed to publish offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to publish offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -243,13 +243,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const offerId = "123";
 
-      jest.spyOn(service, "publishDraftOffer").mockRejectedValue(new Error("Failed to publish offer"));
+      jest.spyOn(service, "publishDraftOffer").mockRejectedValue(new InternalServerErrorException("Failed to publish offer"));
 
       try {
         await controller.publishDraftOffer(groupId, offerId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_PUBLISH_DRAFT + "Failed to publish offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to publish offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -272,13 +272,13 @@ describe("GroupController", () => {
       const userId = "456";
       const moveOffersRequestDto: MoveOffersRequestDto = { publicOffersToMove: ["123", "456"] };
 
-      jest.spyOn(service, "copyOffersToUser").mockRejectedValue(new Error("Failed to copy offers"));
+      jest.spyOn(service, "copyOffersToUser").mockRejectedValue(new InternalServerErrorException("Failed to copy offers"));
 
       try {
         await controller.copyOffersToUser(groupId, userId, moveOffersRequestDto);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_COPY_OFFER_TO_USER + "Failed to copy offers");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to copy offers");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -301,13 +301,13 @@ describe("GroupController", () => {
       const userId = "456";
       const moveOffersRequestDto: MoveOffersRequestDto = { draftOffersToMove: ["123", "456"] };
 
-      jest.spyOn(service, "moveOffersToUser").mockRejectedValue(new Error("Failed to move offers"));
+      jest.spyOn(service, "moveOffersToUser").mockRejectedValue(new InternalServerErrorException("Failed to move offers"));
 
       try {
         await controller.moveOffersToUser(groupId, userId, moveOffersRequestDto);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_MOVE_OFFER_TO_USER + "Failed to move offers");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to move offers");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -329,13 +329,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const offerId = "123";
 
-      jest.spyOn(service, "unpublishPublicOffer").mockRejectedValue(new Error("Failed to unpublish offer"));
+      jest.spyOn(service, "unpublishPublicOffer").mockRejectedValue(new InternalServerErrorException("Failed to unpublish offer"));
 
       try {
         await controller.unpublishPublicOffer(groupId, offerId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_UNPUBLISH_PUBLIC + "Failed to unpublish offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to unpublish offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -357,13 +357,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const offerId = "123";
 
-      jest.spyOn(service, "draftifyPublicOffer").mockRejectedValue(new Error("Failed to draftify offer"));
+      jest.spyOn(service, "draftifyPublicOffer").mockRejectedValue(new InternalServerErrorException("Failed to draftify offer"));
 
       try {
         await controller.draftifyPublicOffer(groupId, offerId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_DRAFTIFY_PUBLIC + "Failed to draftify offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to draftify offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -385,13 +385,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const offerId = "123";
 
-      jest.spyOn(service, "duplicateDraftOffer").mockRejectedValue(new Error("Failed to duplicate offer"));
+      jest.spyOn(service, "duplicateDraftOffer").mockRejectedValue(new InternalServerErrorException("Failed to duplicate offer"));
 
       try {
         await controller.duplicateDraftOffer(groupId, offerId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_DUPLICATE_DRAFT + "Failed to duplicate offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to duplicate offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -413,13 +413,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const offerId = "123";
 
-      jest.spyOn(service, "removeOfferFromGroup").mockRejectedValue(new Error("Failed to remove offer"));
+      jest.spyOn(service, "removeOfferFromGroup").mockRejectedValue(new InternalServerErrorException("Failed to remove offer"));
 
       try {
         await controller.removeOfferFromGroup(groupId, offerId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.DELETE_DRAFT_OFFER + "Failed to remove offer");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to remove offer");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -441,13 +441,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const userId = "456";
 
-      jest.spyOn(service, "removeUserFromGroup").mockRejectedValue(new Error("Failed to remove user"));
+      jest.spyOn(service, "removeUserFromGroup").mockRejectedValue(new InternalServerErrorException("Failed to remove user"));
 
       try {
         await controller.removeUserFromGroup(groupId, userId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.DELETE_USER + "Failed to remove user");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to remove user");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -469,13 +469,13 @@ describe("GroupController", () => {
     it("should throw an error if deleting group fails", async () => {
       const groupId = "1";
 
-      jest.spyOn(service, "deleteGroup").mockRejectedValue(new Error("Failed to delete group"));
+      jest.spyOn(service, "deleteGroup").mockRejectedValue(new InternalServerErrorException("Failed to delete group"));
 
       try {
         await controller.deleteGroup(groupId);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.DELETE_GROUP + "Failed to delete group");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to delete group");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });
@@ -495,13 +495,13 @@ describe("GroupController", () => {
       const groupId = "1";
       const settings = { cat: "myau" };
 
-      jest.spyOn(service, "updateSettings").mockRejectedValue(new Error("Failed to update settings"));
+      jest.spyOn(service, "updateSettings").mockRejectedValue(new InternalServerErrorException("Failed to update settings"));
 
       try {
         await controller.updateSettings(groupId, settings);
       } catch (error) {
-        expect(error.response).toBe(GroupErrors.PUT_UPDATE_SETTINGS + "Failed to update settings");
-        expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        expect(error.response.message).toBe("Failed to update settings");
+        expect(error.response.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     });
   });

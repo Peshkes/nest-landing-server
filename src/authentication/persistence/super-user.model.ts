@@ -31,6 +31,7 @@ const superUserSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    _id: true,
   },
 );
 

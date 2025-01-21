@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 
-import BaseTierModel from "../persistance/baseTierModel";
+import BaseTierModel from "../persistance/base-tier.model";
 import { BaseTierDto } from "../dto/tier.base.dto";
 
 @Injectable()
@@ -59,14 +59,16 @@ export class TierServiceBase {
     }
   };
 
-  updateBaseTierById = async (id: string, newBaseTier: BaseTierDto) => {
+  async updateBaseTierById(id: string, newBaseTier: BaseTierDto) {
     try {
-      const salesTier: BaseTierDto | null = await BaseTierModel.findById(id);
-      if (!salesTier) throw new Error("Тира с таким ID: " + id + " не найдено");
       const { name, settings } = newBaseTier;
-      await BaseTierModel.updateOne({ name, settings });
+
+      const updatedTier = await BaseTierModel.findByIdAndUpdate(id, { name, settings }, { new: true });
+      if (!updatedTier) throw new BadRequestException(`Тира с таким ID: ${id} не найдено`);
+
+      return updatedTier;
     } catch (error: any) {
       throw new Error(`Ошибка при обновлении тира: ${error.message}`);
     }
-  };
+  }
 }

@@ -7,7 +7,7 @@ import { ClientSession } from "mongoose";
 
 @Injectable()
 export class OfferService {
-  async addNewOffer(offer: DraftOfferDto, session: ClientSession) {
+  async addNewOffer(offer: DraftOfferDto, session?: ClientSession) {
     try {
       const { name, body } = offer;
       const newOffer = new DraftOfferModel({
@@ -58,7 +58,7 @@ export class OfferService {
     }
   }
 
-  async deleteDraftOfferById(id: string, session: ClientSession): Promise<DraftOfferDto> {
+  async deleteDraftOfferById(id: string, session?: ClientSession): Promise<DraftOfferDto> {
     try {
       const offer: DraftOfferDto | null = await DraftOfferModel.findByIdAndDelete(id).session(session); //Добавил сессию
       if (!offer) throw new Error("Коммерческого предложения с таким ID: " + id + " не найдено");
@@ -79,11 +79,12 @@ export class OfferService {
     }
   }
 
-  async publishOfferWithoutDraft(offerToPublish: DraftOfferDto, session: ClientSession) {
+  async publishOfferWithoutDraft(offerToPublish: DraftOfferDto, session: ClientSession): Promise<string> {
     try {
       const { name, body, _id = null } = offerToPublish;
       if (!_id || (await DraftOfferModel.findByIdAndDelete(_id))) {
-        return await this.saveOfferToPublicRepo(offerToPublish);
+        // return await this.saveOfferToPublicRepo(offerToPublish);
+        return "";
       }
       if (_id && !(await PublicOfferModel.findByIdAndUpdate(_id, { name, body, update_date: new Date(Date.now()) })))
         throw new Error(`Ошибка при обновлении публикации предложения: некорректнвый ID ${_id}`);
@@ -92,7 +93,9 @@ export class OfferService {
     }
   }
 
-  async publishOfferFromDraft(offer_id: string, session: ClientSession): Promise<string> {}
+  async publishOfferFromDraft(offer_id: string, session: ClientSession): Promise<string> {
+    return "";
+  }
 
   async saveOfferToPublicRepo(offerToPublish: PublicOfferDto) {
     const { name, body, _id, expiration_date } = offerToPublish;
@@ -107,13 +110,27 @@ export class OfferService {
     return savedOffer._id;
   }
 
-  async unpublishPublicOffer(offer_id: string, session: ClientSession): Promise<string> {}
+  async unpublishPublicOffer(offer_id: string, session: ClientSession): Promise<string> {
+    return "";
+  }
 
-  async draftifyPublicOffer(offer_id: string, session: ClientSession): Promise<string> {}
+  async draftifyPublicOffer(offer_id: string, session: ClientSession): Promise<string> {
+    return "";
+  }
 
-  async duplicateDraftOffer(offer_id: string, session: ClientSession): Promise<string> {}
+  async duplicateDraftOffer(offer_id: string, session: ClientSession): Promise<string> {
+    return "";
+  }
 
-  async duplicateDraftOffers(offerIds: string[], session: ClientSession): Promise<string[]> {}
+  async duplicateDraftOffers(offerIds: string[], session: ClientSession): Promise<string[]> {
+    return [""];
+  }
 
-  async duplicatePublicOffers(offerIds: string[], session: ClientSession): Promise<string[]> {}
+  async duplicatePublicOffers(offerIds: string[], session: ClientSession): Promise<string[]> {
+    return [""];
+  }
+
+  async publicateOffer(offerToPublicate: PublicOfferDto) {
+    return Promise.resolve(undefined);
+  }
 }

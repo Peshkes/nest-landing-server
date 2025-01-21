@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import UserModel from "../persistence/user.model";
 import { User } from "../authentication.types";
 import { RuntimeException } from "@nestjs/core/errors/exceptions";
-import mongoose, { ClientSession } from "mongoose";
+import { ClientSession } from "mongoose";
 import { PasswordDto } from "../dto/password.dto";
 import bcrypt from "bcryptjs";
 import { EmailDto } from "../dto/email.dto";
@@ -11,7 +11,7 @@ import crypto from "crypto";
 import ChangePasswordTokenModel from "../persistence/change-password-token.model";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { SubscriptionDto } from "../../share/dto/SubscriptionDto";
+import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
 
@@ -146,10 +146,6 @@ export class UserService {
     }
   }
 
-  async copyToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
-
-  async moveToGroup(group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
-
   async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
 
   async createDraftOffer(id: string, addOfferData: DraftOfferDto) {
@@ -175,4 +171,12 @@ export class UserService {
   async duplicateDraftOffer(id: string, offer_id: string) {
     return "";
   }
+
+  async removeOffer(id: string, offer_id: string) {
+    return undefined;
+  }
+
+  async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+
+  async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 }

@@ -12,12 +12,25 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     const now = new Date();
 
     const dateFormat = new Intl.DateTimeFormat("ru-RU", { year: "numeric", month: "2-digit", day: "2-digit" });
-    const timeFormat = new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const timeFormat = new Intl.DateTimeFormat("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
 
     const date = dateFormat.format(now);
     const time = timeFormat.format(now);
 
     console.log(`[${date} ${time}] [Request received: ${requestId}] [${method}] ${originalUrl}`);
+
+    const originalSend = res.send;
+    let responseBody: any;
+
+    res.send = function (body: any) {
+      responseBody = body;
+      return originalSend.call(this, body);
+    };
 
     res.on("finish", () => {
       const end = performance.now();
@@ -28,16 +41,15 @@ export class RequestLoggingMiddleware implements NestMiddleware {
       const finishDate = dateFormat.format(finishTime);
       const finishTimeFormatted = timeFormat.format(finishTime);
 
-      const logMessage =
-        `[${finishDate} ${finishTimeFormatted}] [Request answered: ${requestId}] [${method}] ${originalUrl} ` +
-        `[Status code: ${statusCode} - Response time: ${responseTime.toFixed(2)}ms]`;
+      const logMessage = `[${finishDate} ${finishTimeFormatted}] [Request answered: ${requestId}] [${method}] ${originalUrl} [Status code: ${statusCode} - Response time: ${responseTime.toFixed(2)}ms]`;
 
       if (statusCode >= 400) {
-        console.log(chalk.red(logMessage));
+        console.error(chalk.red(logMessage + ` Error description: ${responseBody}`));
       } else {
-        console.log(chalk.green(logMessage));
+        console.info(chalk.green(logMessage));
       }
     });
+
     next();
   }
 }

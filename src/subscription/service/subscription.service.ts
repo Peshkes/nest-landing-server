@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import SubscriptionModel from "../persistanse/subscriptionModel";
-import { SubscriptionDto } from "../../share/dto/SubscriptionDto";
+import SubscriptionModel from "../persistanse/subscription.model";
+import { SubscriptionDto } from "../../share/dto/subscription.dto";
 
 @Injectable()
 export class SubscriptionService {

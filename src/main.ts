@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
-import { createAdminUser } from "./authentication/initialization/InitializeDeafultUser";
+import { createAdminUser } from "./authentication/initialization/initialize-default-user";
 
 const connect = async () => {
   await mongoose

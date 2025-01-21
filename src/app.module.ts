@@ -9,6 +9,9 @@ import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware
 import { GroupModule } from "./group/group.module";
 import { ShareModule } from "./share/share.module";
 import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.middleware";
+import { OfferModule } from "./offer/offer.module";
+import { SubscriptionModule } from "./subscription/subscription.module";
+import { TierModule } from "./tier/tier.module";
 
 @Module({
   imports: [
@@ -18,7 +21,10 @@ import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.mi
     }),
     AuthenticationModule,
     GroupModule,
+    OfferModule,
+    SubscriptionModule,
     ShareModule,
+    TierModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })
@@ -37,6 +43,7 @@ export class AppModule implements NestModule {
         { path: "/auth/registration", method: RequestMethod.POST },
         { path: "/auth/refresh", method: RequestMethod.POST },
         { path: "/auth/signin", method: RequestMethod.POST },
+        { path: "/auth/super/signin", method: RequestMethod.POST },
       )
       .forRoutes("*");
   }

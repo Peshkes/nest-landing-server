@@ -5,6 +5,7 @@ import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../services/jwt.service";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
 import chalk from "chalk";
+import SuperUserModel from "../../authentication/persistence/super-user.model";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {
@@ -20,7 +21,9 @@ export class JwtRequestMiddleware implements NestMiddleware {
       }
 
       const jwtDecoded = this.jwtService.verifyToken(accessToken);
-      const user: User | null = await UserModel.findById(jwtDecoded.userId);
+      let user: User;
+      if (jwtDecoded.superAccess) user = await SuperUserModel.findById(jwtDecoded.userId);
+      else user = await UserModel.findById(jwtDecoded.userId);
 
       if (!user) {
         console.log(chalk.red(`[JWT Middleware] User not found for token in ${req.method} ${req.originalUrl}`));

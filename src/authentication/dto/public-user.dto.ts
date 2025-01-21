@@ -1,7 +1,5 @@
-import { ObjectId } from "mongoose";
-
 export class PublicUserDto {
-  id: ObjectId;
+  id: string;
   name: string;
   email: string;
 }

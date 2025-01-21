@@ -7,8 +7,7 @@ import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { User } from "../authentication.types";
-import { SubscriptionDto } from "../../share/dto/SubscriptionDto";
+import { SubscriptionDto } from "../../share/dto/subscription.dto";
 
 @Controller("user")
 export class UserController {
@@ -98,8 +97,8 @@ export class UserController {
 
   @Delete("/:id")
   @UseGuards(OwnerAccessGuard)
-  async removeUser(@Param("id") id: string): Promise<User> {
-    return await this.userService.removeUser(id);
+  async removeUser(@Param("id") id: string): Promise<void> {
+    await this.userService.removeUser(id);
   }
 
   @Put("/subscribe/:id")
