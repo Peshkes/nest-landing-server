@@ -22,4 +22,14 @@ export class SubscriptionService {
       throw new Error(`Ошибка при создании подписки: ${error.message}`);
     }
   };
+
+  async getSubscriptionById(id: string): Promise<SubscriptionDto> {
+    try {
+      const subscription: SubscriptionDto | null = await SubscriptionModel.findById(id);
+      if (!subscription) throw new Error("Подписки предложения с таким ID: " + id + " не найдено");
+      return subscription;
+    } catch (error: any) {
+      throw new Error(`Ошибка при получении подписки: ${error.message}`);
+    }
+  }
 }
