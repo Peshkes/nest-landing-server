@@ -43,7 +43,6 @@ const userSchema = new mongoose.Schema(
     },
     subscription: {
       type: String,
-      required: true,
       ref: "Subscription",
     },
     public_offers: {

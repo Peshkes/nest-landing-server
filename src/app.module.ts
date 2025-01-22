@@ -12,6 +12,7 @@ import { RequestLoggingMiddleware } from "./share/middlewares/request-logging.mi
 import { OfferModule } from "./offer/offer.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { TierModule } from "./tier/tier.module";
+import { RedisModule } from "./redis/redis.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { TierModule } from "./tier/tier.module";
     AuthenticationModule,
     GroupModule,
     OfferModule,
+    RedisModule,
     SubscriptionModule,
     ShareModule,
     TierModule,

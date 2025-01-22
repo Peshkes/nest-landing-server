@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, Validate } from "class-validator";
+import { IsEmail, IsMobilePhone, IsNotEmpty, IsString, MinLength, Validate } from "class-validator";
 import { PasswordComplexityValidator } from "../validators/password-complexity.validator";
 
 export class RegistrationDto {
@@ -24,4 +24,6 @@ export class RegistrationDto {
   })
   @Validate(PasswordComplexityValidator)
   password: string;
+  @IsMobilePhone("ru-RU")
+  phone: string;
 }
