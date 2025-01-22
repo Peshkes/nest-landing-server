@@ -17,23 +17,10 @@ export class GroupAccessGuard implements CanActivate {
     return role && role >= this.minRole;
   }
 
-  protected async getClientRole(accountId: string, groupId: string): Promise<Roles | null> {
+  protected async getClientRole(user_id: string, group_id: string): Promise<Roles | null> {
     try {
-      const groupAccess = await GroupAccessModel.findOne(
-        {
-          [`groups.${groupId}.account_id`]: accountId,
-        },
-        {
-          [`groups.${groupId}.$`]: 1,
-        },
-      );
-
-      if (groupAccess && groupAccess.group_id) {
-        const group = groupAccess.get(groupId);
-        if (group && group[0]) return group[0].role;
-      }
-
-      return null;
+      const groupAccess = await GroupAccessModel.findOne({ user_id, group_id });
+      return groupAccess.role;
     } catch (error) {
       console.error("Ошибка при получении роли:", error);
       return null;
