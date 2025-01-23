@@ -71,6 +71,10 @@ const paymentsSubSchema = new mongoose.Schema({
     type: detailsSubSchema,
     required: true,
   },
+  description: {
+    type: String,
+    required: false,
+  },
 });
 
 const subscriptionSchema = new mongoose.Schema({
@@ -101,7 +105,7 @@ const subscriptionSchema = new mongoose.Schema({
   },
   payments: {
     type: [paymentsSubSchema],
-    required: true,
+    required: false,
   },
 });
 
