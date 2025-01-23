@@ -128,16 +128,16 @@ export class UserService {
     await ChangePasswordTokenModel.findByIdAndDelete(id);
   }
 
-  async addSubscription(id: string, subscription: SubscriptionDto) {
+  async addSubscription(id: string, tier_id: string) {
     const account: User | null = await UserModel.findById(id);
     if (!account) throw new BadRequestException("Пользователь не найден");
     if (account && !account.subscription) {
       try {
         console.log("subscription started in user");
         await UserModel.updateOne(
-          { account: account._id },
+          { account: id },
           {
-            subscription: await this.subscriptionService.createNewSubscription(subscription),
+            subscription: await this.subscriptionService.createNewSubscription(id, tier_id),
           },
         );
       } catch (error: any) {

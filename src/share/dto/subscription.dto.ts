@@ -6,6 +6,8 @@ export class SubscriptionDto {
   @IsString({ message: NOT_STRING })
   tier_id: string;
   @IsUUID("4", { message: SUBSCRIPTION_KEY_IS_NOT_VALID })
+  key: string;
+  @IsUUID("4", { message: SUBSCRIPTION_KEY_IS_NOT_VALID })
   start_date: Date;
   @IsDate({ message: NOT_DATE })
   expiration_date: Date;
