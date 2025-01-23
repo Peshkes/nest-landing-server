@@ -7,7 +7,7 @@ import { createAdminUser } from "./authentication/initialization/initialize-defa
 
 const connect = async () => {
   await mongoose
-    .connect("mongodb://localhost:27017/mongo-landings-db")
+    .connect(process.env.MONGO_URL)
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.error("MongoDB connection error:", err));
 };

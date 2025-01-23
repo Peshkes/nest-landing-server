@@ -7,7 +7,6 @@ import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { MailService } from "../../share/services/mailing.service";
-import AddUserToGroupTokenModel from "../persistanse/add-user-to-group-token.model";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { OfferService } from "../../offer/service/offer.service";
@@ -15,6 +14,7 @@ import { GroupException } from "../errors/group-exception.classes";
 import { UserService } from "../../authentication/service/user.service";
 import { ClientSession } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
+import { RedisService } from "../../redis/service/redis.service";
 
 @Injectable()
 export class GroupService {
@@ -22,6 +22,7 @@ export class GroupService {
     private readonly mailService: MailService,
     private readonly offerService: OfferService,
     private readonly userService: UserService,
+    private readonly redisService: RedisService,
   ) {}
 
   async getGroup(group_id: string): Promise<Group> {
@@ -110,12 +111,7 @@ export class GroupService {
 
       const token = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
       await Promise.all([
-        new AddUserToGroupTokenModel({
-          group_id,
-          token,
-          user_id: groupMember.user_id,
-          role: groupMember.role,
-        }).save({ session }),
+        this.redisService.setValue(token, JSON.stringify({ group_id, user_id: groupMember.user_id, role: groupMember.role })),
         this.sendAddMemberEmail(groupMember.email, group_id, token),
       ]);
     }, GroupException.StartAddingMemberException);
@@ -131,21 +127,21 @@ export class GroupService {
   }
 
   async finishAddingMember(user_id: string, token: string): Promise<void> {
-    return this.runGroupSession(async (session) => {
-      const addRecord = await AddUserToGroupTokenModel.findOne({ token }).session(session);
+    try {
+      const addRecord = JSON.parse(await this.redisService.getValue(token));
       if (!addRecord) throw new BadRequestException("Токен для добавления некорректен или истек");
-
-      if (!(await bcrypt.compare(token, addRecord.token))) throw new BadRequestException("Токен для добавления некорректен или истек");
 
       await Promise.all([
         new GroupAccessModel({
           group_id: addRecord.group_id,
           user_id,
           role: addRecord.role,
-        }).save({ session }),
-        AddUserToGroupTokenModel.deleteOne({ _id: addRecord._id }).session(session),
+        }).save(),
+        await this.redisService.deleteValue(token),
       ]);
-    }, GroupException.FinishAddingMemberException);
+    } catch (error: any) {
+      throw GroupException.FinishAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
