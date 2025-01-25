@@ -50,6 +50,26 @@ export class AuthenticationService {
     }
   }
 
+  async softSignin(token: string) {
+    try {
+      if (!token) throw new BadRequestException("Токен не пришел ");
+      const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token);
+      const user = await UserModel.findById(decodedToken.userId);
+      if (!user) throw new BadRequestException("Пользователь не найден");
+      const tokens = this.jwtService.generateTokenPair(decodedToken.userId);
+      return {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+        tokens,
+      };
+    } catch (error) {
+      throw AuthException.RefreshException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async superSignin(singInDto: SignInDto) {
     try {
       const user = await SuperUserModel.findOne({ email: singInDto.email });
