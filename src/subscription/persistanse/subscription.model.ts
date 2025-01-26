@@ -107,6 +107,10 @@ const subscriptionSchema = new mongoose.Schema({
     type: [paymentsSubSchema],
     required: false,
   },
+  description: {
+    type: String,
+    required: false,
+  },
 });
 
 const SubscriptionModel = mongoose.model("Subscription", subscriptionSchema);

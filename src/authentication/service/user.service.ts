@@ -11,7 +11,6 @@ import crypto from "crypto";
 import ChangePasswordTokenModel from "../persistence/change-password-token.model";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
 

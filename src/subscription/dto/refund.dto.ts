@@ -5,9 +5,9 @@ import { Type } from "class-transformer";
 import { PayerDto } from "./payer.dto";
 import { DetailsDto } from "./details.dto";
 
-export declare class PaymentDto {
+export declare class RefundDto {
   @IsString({ message: NOT_STRING })
-  token: string;
+  key: string;
   @IsString({ message: NOT_STRING })
   transaction_id: string;
   @IsEnum(PaymentStatus, { message: NOT_ONE_OF_PAYMENT_STATUS_VALUES })
@@ -26,8 +26,6 @@ export declare class PaymentDto {
   @ValidateNested()
   @Type(() => DetailsDto)
   details: DetailsDto;
-  @IsNumber()
-  duration: number | null;
   @IsString({ message: NOT_STRING })
   description: string;
 }

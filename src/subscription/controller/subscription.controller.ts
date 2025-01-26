@@ -3,15 +3,16 @@ import { SubscriptionService } from "../service/subscription.service";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { PaymentDto } from "../dto/payment.dto";
+import { RefundDto } from "../dto/refund.dto";
 
 @Controller("subscription")
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
-  @Post("/:tier_id")
+  @Post("/:user_id/:tier_id")
   @UseGuards(UserAccessGuard)
-  async createNewSubscription(@Param("tier_id") tier_id: string): Promise<string> {
-    return this.subscriptionService.createNewSubscription(tier_id);
+  async createNewSubscription(@Param("user_id") user_id: string, @Param("tier_id") tier_id: string) {
+    await this.subscriptionService.createNewSubscription(user_id, tier_id);
   }
 
   @Get("/:id")
@@ -22,61 +23,53 @@ export class SubscriptionController {
 
   @Get("/expirationDate/:id")
   @UseGuards(UserAccessGuard)
-  async getExpirationDateById(@Param("id") id: string): Promise<string> {
+  async getExpirationDateById(@Param("id") id: string): Promise<Date> {
     return this.subscriptionService.getExpirationDateById(id);
   }
 
-  @Get("/pay/:id")
-  @UseGuards(UserAccessGuard)
-  async payForSubscription(@Param("id") id: string) {
-    this.subscriptionService.payForSubscription(id);
-  }
+  // @Get("/pay/:id")
+  // @UseGuards(UserAccessGuard)
+  // async payForSubscription(@Param("id") id: string) {
+  //   this.subscriptionService.payForSubscription(id);
+  // }
 
-  @Get("/refund/:id")
+  @Get("/cancel/:id")
   @UseGuards(UserAccessGuard)
-  async refundSubscription(@Param("id") id: string) {
-    this.subscriptionService.refundSubscription(id);
+  async cancelSubscription(@Param("subscription_id") subscription_id: string) {
+    await this.subscriptionService.cancelSubscription(subscription_id);
   }
 
   @Delete("/:id")
   @UseGuards(UserAccessGuard)
-  async removeSubscriptionById(@Param("id") id: string): Promise<SubscriptionDto> {
-    return this.subscriptionService.removeSubscriptionById(id);
+  async removeSubscriptionById(@Param("id") id: string) {
+    await this.subscriptionService.removeSubscriptionById(id);
   }
 
-  @Put("/receivePaymentInfo")
+  @Put("/paymentInfo")
   @UseGuards(UserAccessGuard)
   async receivePaymentInfo(@Body() payment: PaymentDto) {
-    this.subscriptionService.receivePaymentInfo(payment);
+    await this.subscriptionService.receivePaymentInfo(payment);
   }
 
-  @Put("/receiveRefundInfo")
+  @Put("/refundInfo")
   @UseGuards(UserAccessGuard)
   async receiveRefundInfo(@Body() refundDto: RefundDto) {
-    this.subscriptionService.receiveRefundInfo(refundDto);
+    await this.subscriptionService.receiveRefundInfo(refundDto);
   }
 
-  @Put("/prolongSubscription/:id")
+  @Put("/prolongSubscription/:user_id/:subscription_id/:tier_id")
   @UseGuards(UserAccessGuard)
-  async prolongSubscription(@Param("id") id: string) {
-    this.subscriptionService.prolongSubscription(id);
+  async prolongOrPromoteSubscription(
+    @Param("user_id") user_id: string,
+    @Param("subscription_id") subscription_id: string,
+    @Param("tier_id") tier_id: string,
+  ) {
+    await this.subscriptionService.prolongOrPromoteSubscription(user_id, subscription_id, tier_id);
   }
 
-  @Put("/promoteSubscription/:id/:tier_id")
+  @Put("/toggleSubscription/:id/:active")
   @UseGuards(UserAccessGuard)
-  async promoteSubscription(@Param("id") id: string, @Param("tier_id") tier_id: string) {
-    this.subscriptionService.promoteSubscription(id, tier_id);
-  }
-
-  @Put("/cancelSubscription/:id")
-  @UseGuards(UserAccessGuard)
-  async cancelSubscription(@Param("id") id: string) {
-    this.subscriptionService.cancelSubscription(id);
-  }
-
-  @Put("/toggleSubscription/:id")
-  @UseGuards(UserAccessGuard)
-  async toggleSubscription(@Param("id") id: string) {
-    this.subscriptionService.toggleSubscription(id);
+  async toggleSubscription(@Param("id") id: string, @Param("active") active: boolean) {
+    await this.subscriptionService.toggleSubscription(id, active);
   }
 }
