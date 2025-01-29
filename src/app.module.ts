@@ -13,6 +13,7 @@ import { OfferModule } from "./offer/offer.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { TierModule } from "./tier/tier.module";
 import { RedisModule } from "./redis/redis.module";
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RedisModule } from "./redis/redis.module";
     SubscriptionModule,
     ShareModule,
     TierModule,
+    PaymentModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })

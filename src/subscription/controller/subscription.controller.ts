@@ -4,6 +4,7 @@ import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
+import { PaymentSystems } from "../dto/payment-systems.enum";
 
 @Controller("subscription")
 export class SubscriptionController {
@@ -11,8 +12,12 @@ export class SubscriptionController {
 
   @Post("/:user_id/:tier_id")
   @UseGuards(UserAccessGuard)
-  async createNewSubscription(@Param("user_id") user_id: string, @Param("tier_id") tier_id: string) {
-    await this.subscriptionService.createNewSubscription(user_id, tier_id);
+  async createNewSubscription(
+    @Param("user_id") user_id: string,
+    @Param("tier_id") tier_id: string,
+    @Body() payment_system: PaymentSystems,
+  ) {
+    await this.subscriptionService.createNewSubscription(user_id, tier_id, payment_system);
   }
 
   @Get("/:id")
@@ -26,12 +31,6 @@ export class SubscriptionController {
   async getExpirationDateById(@Param("id") id: string): Promise<Date> {
     return this.subscriptionService.getExpirationDateById(id);
   }
-
-  // @Get("/pay/:id")
-  // @UseGuards(UserAccessGuard)
-  // async payForSubscription(@Param("id") id: string) {
-  //   this.subscriptionService.payForSubscription(id);
-  // }
 
   @Get("/cancel/:id")
   @UseGuards(UserAccessGuard)
@@ -63,8 +62,9 @@ export class SubscriptionController {
     @Param("user_id") user_id: string,
     @Param("subscription_id") subscription_id: string,
     @Param("tier_id") tier_id: string,
+    @Body() payment_system: PaymentSystems,
   ) {
-    await this.subscriptionService.prolongOrPromoteSubscription(user_id, subscription_id, tier_id);
+    await this.subscriptionService.prolongOrPromoteSubscription(user_id, subscription_id, tier_id, payment_system);
   }
 
   @Put("/toggleSubscription/:id/:active")

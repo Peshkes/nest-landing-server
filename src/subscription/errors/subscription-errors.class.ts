@@ -12,4 +12,6 @@ export class SubscriptionErrors {
   public static readonly SUBSCRIPTION_RECEIVING_ERROR = "Ошибка при получении подписки: ";
   public static readonly INVALID_TOKEN = "Шаблона подписки с тами токеном не найдно: ";
   public static readonly INVALID_ID = "Один из объектов не был найден: ";
+  public static readonly PAYMENT_CREATING_ERROR = "Ошибка при создании платежа: ";
+  public static readonly WRONG_PAYMENT_ERROR = "Ошибка при проведении платежа : ";
 }

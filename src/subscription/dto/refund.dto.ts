@@ -1,31 +1,36 @@
-import { IsEnum, IsNumber, IsObject, IsString, ValidateNested } from "class-validator";
-import { NOT_ONE_OF_PAYMENT_STATUS_VALUES, NOT_STRING } from "../../share/share-errors.constants";
+import { IsEnum, IsNumber, IsString } from "class-validator";
+import { NOT_OBJECT, NOT_ONE_OF_PAYMENT_STATUS_VALUES, NOT_STRING } from "../../share/share-errors.constants";
 import { PaymentStatus } from "./payment-status.enum";
-import { Type } from "class-transformer";
-import { PayerDto } from "./payer.dto";
-import { DetailsDto } from "./details.dto";
+import { PaymentSystems } from "./payment-systems.enum";
 
 export declare class RefundDto {
   @IsString({ message: NOT_STRING })
-  key: string;
+  payment_id: string;
   @IsString({ message: NOT_STRING })
-  transaction_id: string;
+  key: string;
+  @IsNumber()
+  sum: number;
   @IsEnum(PaymentStatus, { message: NOT_ONE_OF_PAYMENT_STATUS_VALUES })
   status: string;
   @IsString({ message: NOT_STRING })
-  payment_method: string;
-  @IsNumber()
-  timestamp: number;
-  @IsNumber()
-  sum: number;
-  @IsObject()
-  @ValidateNested()
-  @Type(() => PayerDto)
-  payer: PayerDto;
-  @IsObject()
-  @ValidateNested()
-  @Type(() => DetailsDto)
-  details: DetailsDto;
+  payment_system: PaymentSystems;
+  @IsString({ message: NOT_STRING })
+  transaction_id: string;
   @IsString({ message: NOT_STRING })
   description: string;
+  @Object({ message: NOT_OBJECT })
+  payment_details: object;
+
+  // @IsNumber()
+  // timestamp: number;
+  // @IsObject()
+  // @ValidateNested()
+  // @Type(() => PayerDto)
+  // payer: PayerDto;
+  // @IsObject()
+  // @ValidateNested()
+  // @Type(() => DetailsDto)
+  // details: DetailsDto;
+  // @IsString({ message: NOT_STRING })
+  // description: string;
 }

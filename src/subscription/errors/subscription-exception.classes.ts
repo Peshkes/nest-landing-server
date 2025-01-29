@@ -53,4 +53,12 @@ export class SubscriptionException {
   static CheckIdsException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(SubscriptionErrors.INVALID_ID + message, status);
   }
+
+  static CreateNewPaymentException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(SubscriptionErrors.PAYMENT_CREATING_ERROR + message, status);
+  }
+
+  static WrongPaymentException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(SubscriptionErrors.WRONG_PAYMENT_ERROR + message, status);
+  }
 }
