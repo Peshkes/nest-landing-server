@@ -1,12 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { GroupService } from "../service/group.service";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../share/guards/group-access.guard";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { AddGroupDto } from "../dto/add-group.dto";
 import { GroupMemberDto } from "../dto/group-member.dto";
-import { FullGroupData, Group, GroupAccess, GroupPreview } from "../group.types";
+import { FullGroupData, Group, GroupAccess, GroupPreview, GroupPreviewsPagination, GroupWithAdditionalData } from "../group.types";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
+import { GetGroupsPaginatedDto } from "../dto/get-groups-paginated.dto";
 
 @Controller("group")
 export class GroupController {
@@ -18,10 +19,22 @@ export class GroupController {
     return this.groupService.getGroup(group_id);
   }
 
+  @Get("/full/:group_id")
+  @UseGuards(UserAccessGuard)
+  async getGroupWithAdditionalData(@Param("group_id") group_id: string): Promise<GroupWithAdditionalData> {
+    return this.groupService.getGroupWithAdditionalData(group_id);
+  }
+
   @Get("/all/:id")
   @UseGuards(OwnerAccessGuard)
   async getGroupsPreviews(@Param("id") user_id: string): Promise<GroupPreview[]> {
     return this.groupService.getGroupsPreviews(user_id);
+  }
+
+  @Get("/paginated/:id")
+  @UseGuards(OwnerAccessGuard)
+  async getPaginatedGroupsPreviews(@Param("id") user_id: string, @Query() query: GetGroupsPaginatedDto): Promise<GroupPreviewsPagination> {
+    return this.groupService.getGroupsWithPagination(user_id, query.page, query.limit, query.roles);
   }
 
   @Post("/:id")

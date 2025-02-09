@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nes
 import GroupModel from "../persistanse/group.model";
 import GroupAccessModel from "../persistanse/group-access.model";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, Group, GroupAccess, Roles } from "../group.types";
+import { FullGroupData, Group, GroupAccess, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
@@ -15,6 +15,9 @@ import { UserService } from "../../authentication/service/user.service";
 import { ClientSession } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { RedisService } from "../../redis/service/redis.service";
+import { getGroupWithMembersQuery } from "../queries/get-group-with-members.query";
+import { getGroupsPreviewsQuery } from "../queries/get-groups-previews.query";
+import { getGroupsWithPaginationQuery } from "../queries/get-groups-with-pagination.query";
 
 @Injectable()
 export class GroupService {
@@ -40,50 +43,35 @@ export class GroupService {
     }
   }
 
-  async getGroupsPreviews(user_id: string) {
+  async getGroupWithAdditionalData(group_id: string): Promise<GroupWithAdditionalData> {
     try {
-      // const groupAccessRecords = await GroupAccessModel.find({ user_id });
-      // if (!groupAccessRecords || groupAccessRecords.length === 0) throw new Error("У пользователя нет групп");
-      //
-      // const groupIds = groupAccessRecords.map((record) => record.group_id);
-      // const groups = await GroupModel.find({ _id: { $in: groupIds } });
-      // if (!groups || groups.length === 0) throw new Error("У пользователя нет групп");
-      //
-      // return groupAccessRecords
-      //   .map((record) => {
-      //     const group = groups.find((g) => g._id.toString() === record.group_id.toString());
-      //
-      //     if (group) {
-      //       return {
-      //         group_id: group._id,
-      //         name: group.name,
-      //         role: record.role,
-      //       };
-      //     }
-      //     return null;
-      //   })
-      //   .filter((item) => item !== null);
-      return await GroupAccessModel.aggregate([
-        { $match: { user_id } },
-        {
-          $lookup: {
-            from: "groups",
-            localField: "groups_id",
-            foreignField: "_id",
-            as: "group",
-          },
-        },
-        { $unwind: "$group" },
-        {
-          $project: {
-            group_id: "$group._id",
-            name: "$group.name",
-            role: "$role",
-          },
-        },
-      ]);
+      const groupData = await getGroupWithMembersQuery(group_id);
+      if (!groupData) throw new BadRequestException("Группа не найдена");
+
+      return groupData;
+    } catch (error: any) {
+      throw GroupException.GetGroupWithAdditionalDataException(error.message);
+    }
+  }
+
+  async getGroupsPreviews(user_id: string): Promise<GroupPreview[]> {
+    try {
+      return await getGroupsPreviewsQuery(user_id);
     } catch (error: any) {
       throw GroupException.GetGroupsPreviewsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getGroupsWithPagination(
+    user_id: string,
+    page: number,
+    limit: number,
+    roles: number[],
+  ): Promise<{ data: GroupPreview[]; total: number }> {
+    try {
+      return await getGroupsWithPaginationQuery(user_id, page, limit, roles);
+    } catch (error) {
+      throw GroupException.GetGroupsWithPagination(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -96,7 +84,7 @@ export class GroupService {
       await new GroupAccessModel({
         group_id: createdGroup._id,
         user_id,
-        role: Roles.ADMIN,
+        role: Roles.admin.name,
       }).save({ session });
 
       return createdGroup._id;
@@ -104,17 +92,26 @@ export class GroupService {
   }
 
   async startAddingMember(group_id: string, groupMember: GroupMemberDto): Promise<void> {
-    return this.runGroupSession(async (session) => {
-      await this.findGroupById(group_id, session);
+    try {
+      await this.findGroupById(group_id);
       const existingMember = await GroupAccessModel.findOne({ group_id, user_id: groupMember.user_id });
       if (existingMember) throw new BadRequestException("Пользователь уже является участником группы");
 
       const token = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
       await Promise.all([
-        this.redisService.setValue(token, JSON.stringify({ group_id, user_id: groupMember.user_id, role: groupMember.role })),
+        this.redisService.setValue(
+          token,
+          JSON.stringify({
+            group_id,
+            user_id: groupMember.user_id,
+            role: groupMember.role,
+          }),
+        ),
         this.sendAddMemberEmail(groupMember.email, group_id, token),
       ]);
-    }, GroupException.StartAddingMemberException);
+    } catch (error) {
+      throw GroupException.StartAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   private async sendAddMemberEmail(email: string, userId: string, token: string) {
@@ -272,7 +269,14 @@ export class GroupService {
   async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
     return this.runGroupSession(async (session) => {
       const draftOfferId = await this.offerService.duplicateDraftOffer(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(group_id, { $push: { draft_offers: draftOfferId } }, { new: true, session });
+      const updateResult = await GroupModel.findByIdAndUpdate(
+        group_id,
+        { $push: { draft_offers: draftOfferId } },
+        {
+          new: true,
+          session,
+        },
+      );
 
       if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOfferId;
@@ -282,7 +286,14 @@ export class GroupService {
   async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
     return this.runGroupSession(async (session) => {
       const draftOffer = await this.offerService.deleteDraftOfferById(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(group_id, { $pull: { public_offers: offer_id } }, { new: true, session });
+      const updateResult = await GroupModel.findByIdAndUpdate(
+        group_id,
+        { $pull: { public_offers: offer_id } },
+        {
+          new: true,
+          session,
+        },
+      );
 
       if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return draftOffer;
@@ -293,7 +304,8 @@ export class GroupService {
     try {
       const accessRecord = await GroupAccessModel.findOne({ group_id, user_id });
       if (!accessRecord) throw new BadRequestException(`Пользователь с ID ${user_id} не состоит в группе с ID ${group_id}`);
-      if (accessRecord.role === Roles.ADMIN) throw new BadRequestException(`Невозможно удалить администратора группы с ID ${group_id}`);
+      if (accessRecord.role === Roles.admin.name)
+        throw new BadRequestException(`Невозможно удалить администратора группы с ID ${group_id}`);
 
       await GroupAccessModel.deleteOne({ group_id, user_id });
       return accessRecord;
