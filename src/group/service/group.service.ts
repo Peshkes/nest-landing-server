@@ -66,7 +66,7 @@ export class GroupService {
     user_id: string,
     page: number,
     limit: number,
-    roles: number[],
+    roles: string[],
   ): Promise<{ data: GroupPreview[]; total: number }> {
     try {
       return await getGroupsWithPaginationQuery(user_id, page, limit, roles);

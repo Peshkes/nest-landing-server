@@ -1,6 +1,6 @@
 import GroupAccessModel from "../persistanse/group-access.model";
 
-export const getGroupsWithPaginationQuery = async (user_id: string, page: number, limit: number, roles: number[]) => {
+export const getGroupsWithPaginationQuery = async (user_id: string, page: number, limit: number, roles: string[]) => {
   const skip = Math.max(0, page) * limit;
 
   const pipeline = [

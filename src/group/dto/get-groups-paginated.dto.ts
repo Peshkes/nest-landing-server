@@ -1,5 +1,5 @@
 import { IsArray, IsInt, IsOptional, IsString, Min } from "class-validator";
-import { Type, Transform } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { Roles } from "../group.types";
 
 export class GetGroupsPaginatedDto {
@@ -10,14 +10,12 @@ export class GetGroupsPaginatedDto {
     if (typeof value === "string") {
       return value
         .split(",")
-        .map((role) => {
-          return Roles[role.toLowerCase() as keyof typeof Roles];
-        })
-        .filter((role) => role !== undefined);
+        .map((role) => role.trim().toLowerCase())
+        .filter((role) => Object.keys(Roles).includes(role));
     }
     return value || [];
   })
-  roles?: number[];
+  roles?: string[];
 
   @IsOptional()
   @Type(() => Number)
