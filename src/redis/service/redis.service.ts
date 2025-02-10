@@ -23,4 +23,8 @@ export class RedisService {
   async deleteValue(key: string): Promise<void> {
     await this.redisClient.del(key);
   }
+
+  async extendTtL(key: string, ttl: number) {
+    await this.redisClient.expire(key, ttl);
+  }
 }
