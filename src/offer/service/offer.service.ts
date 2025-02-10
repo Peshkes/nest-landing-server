@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import DraftOfferModel from "../persistance/draftOfferModel";
 import PublicOfferModel from "../persistance/publicOfferModel";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
@@ -7,25 +7,10 @@ import { ClientSession } from "mongoose";
 
 @Injectable()
 export class OfferService {
-  async addNewOffer(offer: DraftOfferDto, session?: ClientSession) {
-    try {
-      const { name, body } = offer;
-      const newOffer = new DraftOfferModel({
-        name,
-        body,
-      });
-      const savedOffer = await newOffer.save();
-      return savedOffer._id;
-    } catch (error: any) {
-      throw new Error(`Ошибка при создании коммерческого предложения: ${error.message}`);
-    }
-  }
-
-  async getOfferById(id: string): Promise<DraftOfferDto> {
+  async getOfferByOfferId(id: string): Promise<DraftOfferDto> {
     try {
       const offer: DraftOfferDto | null = await DraftOfferModel.findById(id);
-      // if (!offer) throw new Error("Коммерческого предложения с таким ID: " + id + " не найдено");
-      if (!offer) throw new Error("Коммерческого предложения с таким ID: " + id + " не найдено");
+      if (!offer) throw new BadRequestException("Коммерческого предложения с таким ID: " + id + " не найдено");
       return { name: offer.name, body: offer.body, _id: offer._id };
     } catch (error: any) {
       throw new Error(`Ошибка при получении коммерческого предложения: ${error.message}`);
@@ -40,11 +25,29 @@ export class OfferService {
     }
   }
 
+  async getOffersByUserId(id: string) {
+    return Promise.resolve(undefined);
+  }
+
   async getAllPublicOffers(): Promise<DraftOfferDto[]> {
     try {
       return await PublicOfferModel.find();
     } catch (error: any) {
       throw new Error(`Ошибка при получении списка коммерческих предложений: ${error.message}`);
+    }
+  }
+
+  async addNewOffer(offer: DraftOfferDto, session?: ClientSession) {
+    try {
+      const { name, body } = offer;
+      const newOffer = new DraftOfferModel({
+        name,
+        body,
+      });
+      const savedOffer = await newOffer.save();
+      return savedOffer._id;
+    } catch (error: any) {
+      throw new Error(`Ошибка при создании коммерческого предложения: ${error.message}`);
     }
   }
 
@@ -131,6 +134,26 @@ export class OfferService {
   }
 
   async publicateOffer(offerToPublicate: PublicOfferDto) {
+    return Promise.resolve(undefined);
+  }
+
+  async updateDraftOfferByUserId(newOffer: DraftOfferDto) {
+    return Promise.resolve(undefined);
+  }
+
+  async getPublicOfferByOfferId(offer_id: string) {
+    return Promise.resolve(undefined);
+  }
+
+  async updatePublicOfferByUserId(newOffer: DraftOfferDto) {
+    return Promise.resolve(undefined);
+  }
+
+  async updatePublicOfferByGroupId(newOffer: DraftOfferDto) {
+    return Promise.resolve(undefined);
+  }
+
+  async updateDraftOfferByGroupId(newOffer: DraftOfferDto) {
     return Promise.resolve(undefined);
   }
 }
