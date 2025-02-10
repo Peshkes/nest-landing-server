@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { PaymentStatus } from "../dto/payment-status.enum";
-import { PaymentSystems } from "../dto/payment-systems.enum";
 
 // const payerSubSchema = new mongoose.Schema({
 //   _id: {
@@ -48,16 +47,16 @@ const paymentsSchema = new mongoose.Schema(
     },
     sum: {
       type: Number,
-      required: false,
+      required: true,
     },
     status: {
       type: String,
-      enum: PaymentStatus,
+      enum: Object.values(PaymentStatus),
       required: true,
     },
     payment_system: {
-      type: PaymentSystems,
-      enum: ["stripe", "yoo_money"],
+      type: String,
+      enum: Object.values(PaymentStatus),
       required: true,
     },
     description: {

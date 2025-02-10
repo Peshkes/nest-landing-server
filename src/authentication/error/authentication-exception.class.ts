@@ -17,4 +17,8 @@ export class AuthException {
   static RefreshException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(AuthErrors.POST_REFRESH + message, status);
   }
+
+  static AddSubscriptionException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.POST_ADD_SUBSCRIPTION + message, status);
+  }
 }

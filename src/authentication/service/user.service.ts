@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import UserModel from "../persistence/user.model";
 import { User } from "../authentication.types";
 import { RuntimeException } from "@nestjs/core/errors/exceptions";
@@ -13,6 +13,10 @@ import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
+import { AuthException } from "../error/authentication-exception.class";
+import { runSession } from "../../share/functions/run-session";
+import SubscriptionModel from "../../subscription/persistanse/subscription.model";
+import { PaymentSystems } from "../../subscription/dto/payment-systems.enum";
 
 @Injectable()
 export class UserService {
@@ -45,6 +49,10 @@ export class UserService {
     } catch (error: any) {
       throw new RuntimeException(`Ошибка при получении аккаунта: ${error.message}`);
     }
+  }
+
+  async userExistsById(id: string, session: ClientSession) {
+    return UserModel.exists({ id }).session(session);
   }
 
   async removeUser(id: string) {
@@ -127,22 +135,20 @@ export class UserService {
     await ChangePasswordTokenModel.findByIdAndDelete(id);
   }
 
-  async addSubscription(id: string, tier_id: string) {
-    const account: User | null = await UserModel.findById(id);
-    if (!account) throw new BadRequestException("Пользователь не найден");
-    if (account && !account.subscription) {
-      try {
+  async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
+    return this.runSubscriptionSession(async (session) => {
+      const account: User | null = await UserModel.findById(id);
+      if (!account) throw new BadRequestException("Пользователь не найден");
+      if (account && !account.subscription) {
         console.log("subscription started in user");
         await UserModel.updateOne(
           { account: id },
           {
-            subscription: await this.subscriptionService.createNewSubscription(id, tier_id),
+            subscription: await this.subscriptionService.createNewSubscription(id, tier_id, payment_system, session),
           },
         );
-      } catch (error: any) {
-        throw new RuntimeException(`Ошибка при добвлении подписки: ${error.message}`);
       }
-    }
+    }, AuthException.AddSubscriptionException);
   }
 
   async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
@@ -178,4 +184,12 @@ export class UserService {
   async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
   async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+
+  //Utils
+  private async runSubscriptionSession(
+    callback: (session: ClientSession) => Promise<any>,
+    customError: (message: string, status?: HttpStatus) => HttpException,
+  ) {
+    return await runSession(SubscriptionModel, callback, customError);
+  }
 }

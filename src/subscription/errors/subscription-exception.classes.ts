@@ -61,4 +61,8 @@ export class SubscriptionException {
   static WrongPaymentException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(SubscriptionErrors.WRONG_PAYMENT_ERROR + message, status);
   }
+
+  static CancelSubscriptionException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(SubscriptionErrors.CANCEL_SUBSCRIPTION_ERROR + message, status);
+  }
 }

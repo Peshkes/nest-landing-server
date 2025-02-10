@@ -1,75 +1,70 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
 import { SubscriptionService } from "../service/subscription.service";
-import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
 import { PaymentSystems } from "../dto/payment-systems.enum";
+import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
+import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 
 @Controller("subscription")
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
-  @Post("/:user_id/:tier_id")
-  @UseGuards(UserAccessGuard)
-  async createNewSubscription(
-    @Param("user_id") user_id: string,
-    @Param("tier_id") tier_id: string,
-    @Body() payment_system: PaymentSystems,
-  ) {
-    await this.subscriptionService.createNewSubscription(user_id, tier_id, payment_system);
+  @Post("/:id/:tier_id")
+  @UseGuards(OwnerAccessGuard)
+  async createNewSubscription(@Param("id") id: string, @Param("tier_id") tier_id: string, @Body() payment_system: PaymentSystems) {
+    await this.subscriptionService.createNewSubscription(id, tier_id, payment_system);
   }
 
   @Get("/:id")
-  @UseGuards(UserAccessGuard)
+  @UseGuards(OwnerAccessGuard)
   async getSubscriptionById(@Param("id") id: string): Promise<SubscriptionDto> {
     return this.subscriptionService.getSubscriptionById(id);
   }
 
   @Get("/expirationDate/:id")
-  @UseGuards(UserAccessGuard)
+  @UseGuards(OwnerAccessGuard)
   async getExpirationDateById(@Param("id") id: string): Promise<Date> {
     return this.subscriptionService.getExpirationDateById(id);
   }
 
   @Get("/cancel/:id")
-  @UseGuards(UserAccessGuard)
+  @UseGuards(OwnerAccessGuard)
   async cancelSubscription(@Param("subscription_id") subscription_id: string) {
     await this.subscriptionService.cancelSubscription(subscription_id);
   }
 
   @Delete("/:id")
-  @UseGuards(UserAccessGuard)
+  @UseGuards(SuperUserAccessGuard)
   async removeSubscriptionById(@Param("id") id: string) {
     await this.subscriptionService.removeSubscriptionById(id);
   }
 
   @Put("/paymentInfo")
-  @UseGuards(UserAccessGuard)
   async receivePaymentInfo(@Body() payment: PaymentDto) {
     await this.subscriptionService.receivePaymentInfo(payment);
   }
 
   @Put("/refundInfo")
-  @UseGuards(UserAccessGuard)
   async receiveRefundInfo(@Body() refundDto: RefundDto) {
     await this.subscriptionService.receiveRefundInfo(refundDto);
   }
 
-  @Put("/prolongSubscription/:user_id/:subscription_id/:tier_id")
-  @UseGuards(UserAccessGuard)
+  @Put("/prolongSubscription/:id/:subscription_id/:tier_id")
+  @UseGuards(OwnerAccessGuard)
   async prolongOrPromoteSubscription(
-    @Param("user_id") user_id: string,
+    @Param("id") id: string,
     @Param("subscription_id") subscription_id: string,
     @Param("tier_id") tier_id: string,
     @Body() payment_system: PaymentSystems,
   ) {
-    await this.subscriptionService.prolongOrPromoteSubscription(user_id, subscription_id, tier_id, payment_system);
+    await this.subscriptionService.prolongOrPromoteSubscription(id, subscription_id, tier_id, payment_system);
   }
 
-  @Put("/toggleSubscription/:id/:active")
-  @UseGuards(UserAccessGuard)
-  async toggleSubscription(@Param("id") id: string, @Param("active") active: boolean) {
-    await this.subscriptionService.toggleSubscription(id, active);
+  @Put("/toggleSubscription/:id")
+  @UseGuards(SuperUserAccessGuard)
+  async toggleSubscription(@Param("id") id: string) {
+    await this.subscriptionService.toggleSubscription(id);
   }
 }

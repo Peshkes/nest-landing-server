@@ -5,6 +5,8 @@ import { PaymentSystems } from "./payment-systems.enum";
 
 export declare class PaymentDto {
   @IsString({ message: NOT_STRING })
+  payment_id: string;
+  @IsString({ message: NOT_STRING })
   key: string;
   @IsNumber()
   sum: number;
