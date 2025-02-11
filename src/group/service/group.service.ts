@@ -12,15 +12,18 @@ import bcrypt from "bcryptjs";
 import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
 import { UserService } from "../../authentication/service/user.service";
-import { ClientSession } from "mongoose";
+import { ClientSession, Promise } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { RedisService } from "../../redis/service/redis.service";
 import { getGroupWithMembersQuery } from "../queries/get-group-with-members.query";
 import { getGroupsPreviewsQuery } from "../queries/get-groups-previews.query";
 import { getGroupsWithPaginationQuery } from "../queries/get-groups-with-pagination.query";
+import { ManageOfferFunctions } from "../../share/functions/manage-offer-functions";
+import { OfferManagerService } from "../../share/interfaces/offer-manager";
+import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 
 @Injectable()
-export class GroupService {
+export class GroupService implements OfferManagerService {
   constructor(
     private readonly mailService: MailService,
     private readonly offerService: OfferService,
@@ -28,14 +31,15 @@ export class GroupService {
     private readonly redisService: RedisService,
   ) {}
 
+  // GROUP METHODS
   async getGroup(group_id: string): Promise<Group> {
     try {
       const group = await this.findGroupById(group_id);
       return {
         _id: group._id,
         name: group.name,
-        draftOffers: group.draft_offers,
-        publicOffers: group.public_offers,
+        draft_offers: group.draft_offers,
+        public_offers: group.public_offers,
         settings: group.settings,
       };
     } catch (error: any) {
@@ -141,165 +145,6 @@ export class GroupService {
     }
   }
 
-  async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const draftOfferId = await this.offerService.addNewOffer(addOfferData, session);
-      const result = await GroupModel.updateOne({ _id: group_id }, { $push: { draft_offers: draftOfferId } }, { session });
-
-      if (result.modifiedCount === 0) throw new BadRequestException(`Группа с ID ${group_id} не найдена или не обновлена`);
-      return draftOfferId;
-    }, GroupException.CreateDraftException);
-  }
-
-  async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-      const publicOfferId = await this.offerService.publishOfferWithoutDraft(offer, session);
-      group.public_offers.push(publicOfferId);
-
-      await group.save({ session });
-      return publicOfferId;
-    }, GroupException.PublishOfferWithoutDraftException);
-  }
-
-  async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const result = await GroupModel.findByIdAndUpdate(
-        group_id,
-        {
-          $push: { public_offers: offer_id },
-          $pull: { draft_offers: offer_id },
-        },
-        { new: true, session },
-      );
-
-      if (!result) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-      return await this.offerService.publishOfferFromDraft(offer_id, session);
-    }, GroupException.PublishDraftException);
-  }
-
-  async copyOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
-    return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-      const newPublicOfferIds: string[] = [];
-      const newDraftOfferIds: string[] = [];
-
-      if (moveOffersRequestDto.publicOffersToMove?.length) {
-        const publicOffersToCopy = moveOffersRequestDto.publicOffersToMove.filter((offerId) => group.public_offers.includes(offerId));
-        const newOfferIds = await this.offerService.duplicatePublicOffers(publicOffersToCopy, session);
-        newPublicOfferIds.push(...newOfferIds);
-      }
-
-      if (moveOffersRequestDto.draftOffersToMove?.length) {
-        const draftOffersToCopy = moveOffersRequestDto.draftOffersToMove.filter((offerId) => group.draft_offers.includes(offerId));
-        const newOfferIds = await this.offerService.duplicateDraftOffers(draftOffersToCopy, session);
-        newDraftOfferIds.push(...newOfferIds);
-      }
-
-      await this.userService.addOffersIdsToUser(
-        user_id,
-        { publicOffersToMove: newPublicOfferIds, draftOffersToMove: newDraftOfferIds },
-        session,
-      );
-
-      return { newPublicOfferIds, newDraftOfferIds };
-    }, GroupException.CopyOfferToUserException);
-  }
-
-  async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto): Promise<void> {
-    return this.runGroupSession(async (session) => {
-      const group = await this.findGroupById(group_id, session);
-      const publicOffersToMove: string[] = [];
-      const draftOffersToMove: string[] = [];
-
-      group.public_offers = group.public_offers.filter((offerId) => {
-        if (moveOffersRequestDto.publicOffersToMove?.includes(offerId)) {
-          publicOffersToMove.push(offerId);
-          return false;
-        }
-        return true;
-      });
-
-      group.draft_offers = group.draft_offers.filter((offerId) => {
-        if (moveOffersRequestDto.draftOffersToMove?.includes(offerId)) {
-          draftOffersToMove.push(offerId);
-          return false;
-        }
-        return true;
-      });
-
-      await this.userService.addOffersIdsToUser(user_id, { publicOffersToMove, draftOffersToMove }, session);
-
-      await group.save({ session });
-    }, GroupException.MoveOfferToUserException);
-  }
-
-  async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const draftOfferId = await this.offerService.unpublishPublicOffer(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(
-        group_id,
-        {
-          $push: { draft_offers: draftOfferId },
-          $pull: { public_offers: offer_id },
-        },
-        { new: true, session },
-      );
-
-      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-      return draftOfferId;
-    }, GroupException.UnpublishPublicException);
-  }
-
-  async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const draftOfferId = await this.offerService.draftifyPublicOffer(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(
-        group_id,
-        {
-          $push: { draft_offers: draftOfferId },
-        },
-        { new: true, session },
-      );
-      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-      return draftOfferId;
-    }, GroupException.DraftifyPublicException);
-  }
-
-  async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      const draftOfferId = await this.offerService.duplicateDraftOffer(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(
-        group_id,
-        { $push: { draft_offers: draftOfferId } },
-        {
-          new: true,
-          session,
-        },
-      );
-
-      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-      return draftOfferId;
-    }, GroupException.DuplicateDraftException);
-  }
-
-  async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
-    return this.runGroupSession(async (session) => {
-      const draftOffer = await this.offerService.deleteDraftOfferById(offer_id, session);
-      const updateResult = await GroupModel.findByIdAndUpdate(
-        group_id,
-        { $pull: { public_offers: offer_id } },
-        {
-          new: true,
-          session,
-        },
-      );
-
-      if (!updateResult) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-      return draftOffer;
-    }, GroupException.DeleteDraftOfferException);
-  }
-
   async removeUserFromGroup(group_id: string, user_id: string): Promise<GroupAccess> {
     try {
       const accessRecord = await GroupAccessModel.findOne({ group_id, user_id });
@@ -352,6 +197,82 @@ export class GroupService {
     }
   }
 
+  // OFFER MANAGER METHODS
+  async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.createDraftOffer(this.offerService, GroupModel, group_id, addOfferData, session);
+    }, GroupException.CreateDraftException);
+  }
+
+  async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.publishOfferWithoutDraft(this.offerService, GroupModel, group_id, offer, session);
+    }, GroupException.PublishOfferWithoutDraftException);
+  }
+
+  async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.publishDraftOffer(this.offerService, GroupModel, group_id, offer_id, session);
+    }, GroupException.PublishDraftException);
+  }
+
+  async copyOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.copyOffersToAnotherEntity(
+        this.offerService,
+        GroupModel,
+        group_id,
+        user_id,
+        this.userService,
+        moveOffersRequestDto,
+        session,
+      );
+    }, GroupException.CopyOfferToUserException);
+  }
+
+  async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto): Promise<void> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.moveOffersToAnotherEntity(
+        this.offerService,
+        GroupModel,
+        group_id,
+        user_id,
+        this.userService,
+        moveOffersRequestDto,
+        session,
+      );
+    }, GroupException.MoveOfferToUserException);
+  }
+
+  async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.unpublishPublicOffer(this.offerService, GroupModel, group_id, offer_id, session);
+    }, GroupException.UnpublishPublicException);
+  }
+
+  async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.draftifyPublicOffer(this.offerService, GroupModel, group_id, offer_id, session);
+    }, GroupException.DraftifyPublicException);
+  }
+
+  async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.duplicateDraftOffer(this.offerService, GroupModel, group_id, offer_id, session);
+    }, GroupException.DuplicateDraftException);
+  }
+
+  async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
+    return this.runGroupSession(async (session) => {
+      return await ManageOfferFunctions.removeOfferFromEntity(this.offerService, GroupModel, group_id, offer_id, session);
+    }, GroupException.DeleteDraftOfferException);
+  }
+
+  async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
+    await addOffersToGroupQuery(user_id, moveOffersRequestDto, session);
+  }
+
+  //UTILITY METHODS
   private async runGroupSession(
     callback: (session: ClientSession) => Promise<any>,
     customError: (message: string, status?: HttpStatus) => HttpException,

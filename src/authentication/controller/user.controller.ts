@@ -8,7 +8,6 @@ import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { GetOffersPaginatedDto } from "../dto/get-offers-paginated.dto";
-import { PaymentSystems } from "../../subscription/subscription.types";
 
 @Controller("user")
 export class UserController {
@@ -112,6 +111,6 @@ export class UserController {
   @UseGuards(OwnerAccessGuard)
   async addSubscription(@Param("id") id: string, @Param() tier_id: string) {
     console.log("subscription started in user controller");
-    await this.userService.addSubscription(id, tier_id, PaymentSystems.STRIPE); //TODO FINISH IT!
+    await this.userService.addSubscription(id, tier_id, "");
   }
 }

@@ -1,19 +1,23 @@
-export type AuthenticationData = {
+import { OfferManager } from "../share/interfaces/offer-manager";
+
+export interface AuthenticationData {
   email: string;
   password: string;
-};
+}
 
-export type UserData = AuthenticationData & {
+export interface UserData extends AuthenticationData {
   name: string;
-};
+}
 
-export type User = UserData & {
+export interface User extends UserData, OfferManager {
   _id: string;
-  lastPasswords: string[];
-  subscription: null;
-  publicOffers: string[];
-  draftOffers: string[];
-};
+  last_passwords: string[];
+  subscription?: string;
+  email_verified: boolean;
+  phone: string;
+  deleted: boolean;
+  deletion_date: Date;
+}
 
 export type Tokens = {
   accessToken: string;

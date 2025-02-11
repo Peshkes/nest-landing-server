@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { Group } from "../group.types";
 
-const groupSchema = new mongoose.Schema({
+const groupSchema = new mongoose.Schema<Group>({
   _id: {
     type: String,
     default: uuidv4,

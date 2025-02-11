@@ -16,14 +16,22 @@ import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.
 import { runSession } from "../../share/functions/run-session";
 import { UserException } from "../error/user-exception.class";
 import { PaymentSystems } from "../../subscription/subscription.types";
+import { addOffersToUserQuery } from "../queries/add-offers-to-user.query";
+import { ManageOfferFunctions } from "../../share/functions/manage-offer-functions";
+import { OfferService } from "../../offer/service/offer.service";
+import { OfferManagerService } from "../../share/interfaces/offer-manager";
+import { GroupService } from "../../group/service/group.service";
 
 @Injectable()
-export class UserService {
+export class UserService implements OfferManagerService {
   constructor(
     private readonly mailService: MailService,
     private readonly subscriptionService: SubscriptionService,
+    private readonly offerService: OfferService,
+    private readonly groupService: GroupService,
   ) {}
 
+  //USER METHODS
   async getAllUsers() {
     try {
       const accounts: User[] = await UserModel.find();
@@ -71,13 +79,13 @@ export class UserService {
   }
 
   private async processUpdatePassword(id: string, passwordDto: PasswordDto, session: ClientSession) {
-    const account: User = await this.findUserById(id);
+    const account = await this.findUserById(id);
 
     if (await bcrypt.compare(passwordDto.password, account.password))
       throw new BadRequestException("Новый пароль не должен совпадать со старым");
 
-    const lastPasswords = account.lastPasswords;
-    for (const pass of account.lastPasswords) {
+    const lastPasswords = account.last_passwords;
+    for (const pass of account.last_passwords) {
       if (await bcrypt.compare(passwordDto.password, pass))
         throw new BadRequestException("Этот пароль уже был использован. Пожайлуйста придумайте другой пароль");
     }
@@ -142,48 +150,84 @@ export class UserService {
     }, UserException.AddSubscriptionException);
   }
 
-  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
-    const user = this.findUserById(user_id, session);
-
-  }
-
-  async createDraftOffer(id: string, addOfferData: DraftOfferDto) {
-    return "";
+  //OFFER MANAGER METHODS
+  async createDraftOffer(id: string, addOfferData: DraftOfferDto): Promise<string> {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.createDraftOffer(this.offerService, UserModel, id, addOfferData, session);
+    }, UserException.CreateDraftOfferException);
   }
 
   async publishOfferWithoutDraft(id: string, offer: DraftOfferDto) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.publishOfferWithoutDraft(this.offerService, UserModel, id, offer, session);
+    }, UserException.PublishOfferException);
   }
 
   async publishDraftOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.publishDraftOffer(this.offerService, UserModel, id, offer_id, session);
+    }, UserException.PublishDraftOfferException);
   }
 
   async unpublishPublicOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.unpublishPublicOffer(this.offerService, UserModel, id, offer_id, session);
+    }, UserException.UnpublishOfferException);
   }
 
   async draftifyPublicOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.draftifyPublicOffer(this.offerService, UserModel, id, offer_id, session);
+    }, UserException.DraftifyOfferException);
   }
 
   async duplicateDraftOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.duplicateDraftOffer(this.offerService, UserModel, id, offer_id, session);
+    }, UserException.DuplicateDraftOfferException);
   }
 
   async removeOffer(id: string, offer_id: string) {
-    return undefined;
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.removeOfferFromEntity(this.offerService, UserModel, id, offer_id, session);
+    }, UserException.RemoveOfferException);
   }
 
   async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.copyOffersToAnotherEntity(
+        this.offerService,
+        UserModel,
+        id,
+        group_id,
+        this.groupService,
+        moveOffersRequestDto,
+        session,
+      );
+    }, UserException.CopyToGroupException);
   }
 
   async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.moveOffersToAnotherEntity(
+        this.offerService,
+        UserModel,
+        id,
+        group_id,
+        this.groupService,
+        moveOffersRequestDto,
+        session,
+      );
+    }, UserException.MoveToGroupException);
   }
 
-  //Utils
+  async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
+    await addOffersToUserQuery(user_id, moveOffersRequestDto, session);
+  }
+
+  //UTILITY METHODS
   private async findUserById(id: string, session?: ClientSession) {
-    const user: User = (await UserModel.findById(id).session(session)) as unknown as User;
+    const user = await UserModel.findById(id).session(session);
     if (!user) throw new BadRequestException("Пользователь не найден");
     return user;
   }
