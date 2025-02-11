@@ -39,7 +39,7 @@ export class GroupService {
         settings: group.settings,
       };
     } catch (error: any) {
-      throw GroupException.GetGroupException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.GetGroupException(error.message, error.statusCode);
     }
   }
 
@@ -58,7 +58,7 @@ export class GroupService {
     try {
       return await getGroupsPreviewsQuery(user_id);
     } catch (error: any) {
-      throw GroupException.GetGroupsPreviewsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.GetGroupsPreviewsException(error.message, error.statusCode);
     }
   }
 
@@ -71,7 +71,7 @@ export class GroupService {
     try {
       return await getGroupsWithPaginationQuery(user_id, page, limit, roles);
     } catch (error) {
-      throw GroupException.GetGroupsWithPagination(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.GetGroupsWithPagination(error.message, error.statusCode);
     }
   }
 
@@ -110,7 +110,7 @@ export class GroupService {
         this.sendAddMemberEmail(groupMember.email, group_id, token),
       ]);
     } catch (error) {
-      throw GroupException.StartAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.StartAddingMemberException(error.message, error.statusCode);
     }
   }
 
@@ -137,7 +137,7 @@ export class GroupService {
         await this.redisService.deleteValue(token),
       ]);
     } catch (error: any) {
-      throw GroupException.FinishAddingMemberException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.FinishAddingMemberException(error.message, error.statusCode);
     }
   }
 
@@ -310,7 +310,7 @@ export class GroupService {
       await GroupAccessModel.deleteOne({ group_id, user_id });
       return accessRecord;
     } catch (error: any) {
-      throw GroupException.DeleteUserException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.DeleteUserException(error.message, error.statusCode);
     }
   }
 
@@ -348,7 +348,7 @@ export class GroupService {
       if (!updatedGroup) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return updatedGroup.settings;
     } catch (error) {
-      throw GroupException.UpdateSettingsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw GroupException.UpdateSettingsException(error.message, error.statusCode);
     }
   }
 

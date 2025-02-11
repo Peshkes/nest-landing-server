@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const changePasswordTokenSchema = new mongoose.Schema({
-  userId: {
+  _id: {
     type: String,
     required: true,
     ref: "user",

@@ -1,5 +1,3 @@
-import { PaymentStatus } from "./dto/payment-status.enum";
-
 export type PaymentCheckData = {
   _id: string;
   sum: number;
@@ -16,3 +14,15 @@ export type SalesTier = {
   sales_price?: number;
   expiration_date?: Date;
 };
+
+export enum PaymentSystems {
+  STRIPE = "stripe",
+  YOO_MONEY = "yoo_money",
+}
+
+export enum PaymentStatus {
+  INITIALIZED = "initialized",
+  SUCCESS = "success",
+  PENDING = "pending",
+  FAILED = "failed",
+}

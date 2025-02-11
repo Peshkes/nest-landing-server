@@ -1,7 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import UserModel from "../persistence/user.model";
 import { User } from "../authentication.types";
-import { RuntimeException } from "@nestjs/core/errors/exceptions";
 import { ClientSession } from "mongoose";
 import { PasswordDto } from "../dto/password.dto";
 import bcrypt from "bcryptjs";
@@ -14,10 +13,9 @@ import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
 import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
-import { AuthException } from "../error/authentication-exception.class";
 import { runSession } from "../../share/functions/run-session";
-import SubscriptionModel from "../../subscription/persistanse/subscription.model";
-import { PaymentSystems } from "../../subscription/dto/payment-systems.enum";
+import { UserException } from "../error/user-exception.class";
+import { PaymentSystems } from "../../subscription/subscription.types";
 
 @Injectable()
 export class UserService {
@@ -29,26 +27,18 @@ export class UserService {
   async getAllUsers() {
     try {
       const accounts: User[] = await UserModel.find();
-      return accounts.map((user) => ({
-        email: user.email,
-        name: user.name,
-        _id: user._id,
-        subscription: user.subscription,
-        publicOffers: user.publicOffers,
-        draftOffers: user.draftOffers,
-      }));
+      return accounts;
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при получении списка аккаунтов: ${error.message}`);
+      throw UserException.GetAllUsersException(error.message, error.statusCode);
     }
   }
 
   async getUser(id: string) {
     try {
-      const account = await UserModel.findById(id);
-      if (!account) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      return { email: account.email, name: account.name, _id: account._id };
+      const user = await this.findUserById(id);
+      return { email: user.email, name: user.name, _id: user._id };
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при получении аккаунта: ${error.message}`);
+      throw UserException.GetUserException(error.message, error.statusCode);
     }
   }
 
@@ -57,7 +47,11 @@ export class UserService {
   }
 
   async getOffersByUserId(id: string, page: number, limit: number, roles: string[], statuses: string[]) {
-    return getAllPaginatedOffersQuery(id, roles, statuses, page, limit);
+    try {
+      return getAllPaginatedOffersQuery(id, roles, statuses, page, limit);
+    } catch (error: any) {
+      throw UserException.GetOffersException(error.message, error.statusCode);
+    }
   }
 
   async removeUser(id: string) {
@@ -66,59 +60,54 @@ export class UserService {
       if (!account) throw new BadRequestException("Пользователь не найден");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при удалении аккаунта: ${error.message}`);
+      throw UserException.RemoveUserException(error.message, error.statusCode);
     }
   }
 
   async updatePassword(id: string, passwordDto: PasswordDto) {
-    try {
-      const account: User = await UserModel.findById(id);
+    await this.runUserSession(async (session) => {
+      await this.processUpdatePassword(id, passwordDto, session);
+    }, UserException.UpdatePasswordException);
+  }
 
-      if (!account) throw new BadRequestException("Пользователь не найден");
+  private async processUpdatePassword(id: string, passwordDto: PasswordDto, session: ClientSession) {
+    const account: User = await this.findUserById(id);
 
-      if (await bcrypt.compare(passwordDto.password, account.password))
-        throw new BadRequestException("Новый пароль не должен совпадать со старым");
+    if (await bcrypt.compare(passwordDto.password, account.password))
+      throw new BadRequestException("Новый пароль не должен совпадать со старым");
 
-      const lastPasswords = account.lastPasswords;
-      for (const pass of account.lastPasswords) {
-        if (await bcrypt.compare(passwordDto.password, pass))
-          throw new BadRequestException("Этот пароль уже был использован. Пожайлуйста придумайте другой пароль");
-      }
-      lastPasswords.unshift(account.password);
-      if (lastPasswords.length > 3) lastPasswords.pop();
-
-      await UserModel.updateOne(
-        { account: account._id },
-        {
-          password: await bcrypt.hash(passwordDto.password, 10),
-          lastPasswords: lastPasswords,
-        },
-      );
-    } catch (error: any) {
-      throw new RuntimeException(`Ошибка при обновлении пароля: ${error.message}`);
+    const lastPasswords = account.lastPasswords;
+    for (const pass of account.lastPasswords) {
+      if (await bcrypt.compare(passwordDto.password, pass))
+        throw new BadRequestException("Этот пароль уже был использован. Пожайлуйста придумайте другой пароль");
     }
+    lastPasswords.unshift(account.password);
+    if (lastPasswords.length > 3) lastPasswords.pop();
+
+    await UserModel.updateOne(
+      { account: account._id },
+      {
+        password: await bcrypt.hash(passwordDto.password, 10),
+        lastPasswords: lastPasswords,
+      },
+    ).session(session);
   }
 
   async startResetPassword(email: EmailDto) {
-    try {
-      const existingUser = await UserModel.findOne(email);
+    await this.runUserSession(async (session) => {
+      const existingUser = await UserModel.findOne(email).session(session);
       if (!existingUser) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      const token = await ChangePasswordTokenModel.findOne({
-        userId: existingUser._id,
-      });
-      if (token) await token.deleteOne();
+      await ChangePasswordTokenModel.findByIdAndDelete(existingUser._id);
+
       const resetToken = crypto.randomBytes(32).toString("hex");
       const hash = await bcrypt.hash(resetToken, 10);
       await new ChangePasswordTokenModel({
-        userId: existingUser._id,
+        _id: existingUser._id,
         token: hash,
-        createdAt: Date.now(),
-      }).save();
+      }).save({ session });
 
       await this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
-    } catch (error: any) {
-      throw new RuntimeException(`Ошибка при обновлении пароля: ${error.message}`);
-    }
+    }, UserException.StartResetPasswordException);
   }
 
   private async sendResetPasswordEmail(email: string, userId: string, token: string) {
@@ -131,32 +120,32 @@ export class UserService {
   }
 
   async finishResetPassword(id: string, token: string, passwordDto: PasswordDto) {
-    const passwordResetToken = await ChangePasswordTokenModel.findOne({
-      userId: id,
-    });
-    if (!passwordResetToken || !(await bcrypt.compare(token, passwordResetToken.token)))
-      throw new BadRequestException("Токен смены пароля некорректен или истек");
-    await this.updatePassword(id, passwordDto);
-    await ChangePasswordTokenModel.findByIdAndDelete(id);
+    await this.runUserSession(async (session) => {
+      const passwordResetToken = await ChangePasswordTokenModel.findByIdAndDelete(id).session(session);
+      if (!passwordResetToken || !(await bcrypt.compare(token, passwordResetToken.token)))
+        throw new BadRequestException("Токен смены пароля некорректен или истек");
+      await this.processUpdatePassword(id, passwordDto, session);
+    }, UserException.FinishResetPasswordException);
   }
 
   async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
-    return this.runSubscriptionSession(async (session) => {
-      const account: User | null = await UserModel.findById(id);
-      if (!account) throw new BadRequestException("Пользователь не найден");
-      if (account && !account.subscription) {
-        console.log("subscription started in user");
+    return this.runUserSession(async (session) => {
+      const user = await this.findUserById(id, session);
+      if (user && !user.subscription) {
         await UserModel.updateOne(
           { account: id },
           {
             subscription: await this.subscriptionService.createNewSubscription(id, tier_id, payment_system, session),
           },
-        );
+        ).session(session);
       }
-    }, AuthException.AddSubscriptionException);
+    }, UserException.AddSubscriptionException);
   }
 
-  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
+  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
+    const user = this.findUserById(user_id, session);
+
+  }
 
   async createDraftOffer(id: string, addOfferData: DraftOfferDto) {
     return "";
@@ -186,15 +175,23 @@ export class UserService {
     return undefined;
   }
 
-  async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+  async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+  }
 
-  async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+  async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+  }
 
   //Utils
-  private async runSubscriptionSession(
+  private async findUserById(id: string, session?: ClientSession) {
+    const user: User = (await UserModel.findById(id).session(session)) as unknown as User;
+    if (!user) throw new BadRequestException("Пользователь не найден");
+    return user;
+  }
+
+  private async runUserSession(
     callback: (session: ClientSession) => Promise<any>,
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
-    return await runSession(SubscriptionModel, callback, customError);
+    return await runSession(UserModel, callback, customError);
   }
 }

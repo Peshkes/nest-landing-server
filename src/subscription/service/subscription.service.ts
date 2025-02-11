@@ -6,7 +6,7 @@ import { PaymentDto } from "../dto/payment.dto";
 import { SubscriptionException } from "../errors/subscription-exception.classes";
 import { RedisService } from "../../redis/service/redis.service";
 import UserModel from "../../authentication/persistence/user.model";
-import { PaymentCheckData, SalesTier } from "../types";
+import { PaymentCheckData, SalesTier } from "../subscription.types";
 import { RefundDto } from "../dto/refund.dto";
 import PaymentModel from "../persistanse/payment.model";
 import { PaymentStatus } from "../dto/payment-status.enum";
