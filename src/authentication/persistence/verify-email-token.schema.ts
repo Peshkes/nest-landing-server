@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-const changePasswordTokenSchema = new mongoose.Schema({
-  _id: {
+const verifyEmailTokenSchema = new mongoose.Schema({
+  userId: {
     type: String,
     required: true,
     ref: "user",
@@ -17,5 +17,4 @@ const changePasswordTokenSchema = new mongoose.Schema({
   },
 });
 
-const ChangePasswordTokenModel = mongoose.model("ChangePasswordToken", changePasswordTokenSchema);
-export default ChangePasswordTokenModel;
+export default verifyEmailTokenSchema;

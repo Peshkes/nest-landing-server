@@ -1,4 +1,4 @@
-import GroupModel from "../persistanse/group.model";
+import GroupModel from "../persistanse/group.schema";
 import { GroupWithAdditionalData } from "../group.types";
 
 export const getGroupWithMembersQuery = async (group_id: string): Promise<GroupWithAdditionalData> => {

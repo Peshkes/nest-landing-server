@@ -1,7 +1,6 @@
 import { IsEnum, IsNumber, IsString } from "class-validator";
 import { NOT_OBJECT, NOT_ONE_OF_PAYMENT_STATUS_VALUES, NOT_STRING } from "../../share/share-errors.constants";
-import { PaymentStatus } from "./payment-status.enum";
-import { PaymentSystems } from "./payment-systems.enum";
+import { PaymentStatus, PaymentSystems } from "../subscription.types";
 
 export declare class RefundDto {
   @IsString({ message: NOT_STRING })

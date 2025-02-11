@@ -1,4 +1,5 @@
 import { OfferManager } from "../share/interfaces/offer-manager";
+import { v4 as uuidv4 } from "uuid";
 
 export interface AuthenticationData {
   email: string;
@@ -17,6 +18,14 @@ export interface User extends UserData, OfferManager {
   phone: string;
   deleted: boolean;
   deletion_date: Date;
+}
+
+export interface SuperUser {
+  _id: string;
+  name: string;
+  email: string;
+  password: string;
+  lastPasswords: Array<string>;
 }
 
 export type Tokens = {

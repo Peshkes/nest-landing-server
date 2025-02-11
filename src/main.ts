@@ -2,15 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
-import mongoose from "mongoose";
 import { createAdminUser } from "./authentication/initialization/initialize-default-user";
-
-const connect = async () => {
-  await mongoose
-    .connect(process.env.MONGO_URL)
-    .then(() => console.log("MongoDB connected"))
-    .catch((err) => console.error("MongoDB connection error:", err));
-};
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,7 +16,6 @@ async function bootstrap() {
 
   app.useLogger(new Logger());
 
-  await connect();
   await createAdminUser();
 
   app.useGlobalPipes(

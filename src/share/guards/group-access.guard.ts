@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
-import GroupAccessModel from "../../group/persistanse/group-access.model";
+import GroupAccessModel from "../../group/persistanse/group-access.schema";
 import { RoleInfo, RoleName, Roles } from "../../group/group.types";
 
 export class GroupAccessGuard implements CanActivate {

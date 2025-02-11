@@ -24,16 +24,14 @@ const superUserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    lastPasswords: {
+    last_passwords: {
       type: [String],
       required: true,
     },
   },
   {
     timestamps: true,
-    _id: true,
   },
 );
 
-const SuperUserModel = mongoose.model("SuperUser", superUserSchema);
-export default SuperUserModel;
+export default superUserSchema;

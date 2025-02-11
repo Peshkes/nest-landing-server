@@ -5,24 +5,29 @@ export type PaymentCheckData = {
   status: PaymentStatus;
 };
 
-export type SalesTier = {
-  _id: string;
-  name: string;
-  duration: number;
-  price: number;
-  base_tier: string;
-  sales_price?: number;
-  expiration_date?: Date;
-};
-
-export enum PaymentSystems {
-  STRIPE = "stripe",
-  YOO_MONEY = "yoo_money",
-}
-
 export enum PaymentStatus {
   INITIALIZED = "initialized",
   SUCCESS = "success",
   PENDING = "pending",
   FAILED = "failed",
+}
+
+export interface Payment {
+  _id: string;
+  sum: number;
+  status: PaymentStatus;
+  payment_system: PaymentStatus;
+  description?: string;
+  payment_details?: object;
+}
+
+export interface Subscription {
+  _id: string;
+  tier_id: string;
+  key: string;
+  start_date: Date;
+  expiration_date: Date;
+  is_active: boolean;
+  payments_ids: string[];
+  description?: string;
 }

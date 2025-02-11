@@ -1,11 +1,11 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import UserModel from "../../authentication/persistence/user.model";
+import UserModel from "../../authentication/persistence/user.schema";
 import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../services/jwt.service";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
 import chalk from "chalk";
-import SuperUserModel from "../../authentication/persistence/super-user.model";
+import SuperUserModel from "../../authentication/persistence/super-user.schema";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {

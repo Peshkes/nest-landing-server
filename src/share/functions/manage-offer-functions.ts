@@ -56,16 +56,18 @@ export class ManageOfferFunctions {
     return await offerService.publishOfferFromDraft(offer_id, session);
   }
 
-  static async copyOffersToAnotherEntity<T extends OfferManager, S extends OfferManagerService>(
+  static async copyOffersToAnotherEntity<T extends OfferManager>(
     offerService: OfferService,
-    model: Model<T>,
-    id: string,
+    from_model: Model<T>,
+    from_id: string,
     to_id: string,
-    to_service: S,
     moveOffersRequestDto: MoveOffersRequestDto,
+    emitFunction: (group_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) => Promise<void>,
     session: ClientSession,
   ) {
-    const entity = await model.findById(id, { session });
+    const entity = await from_model.findById(from_id, { session });
+    if (!entity) throw new Error(`Entity with ID ${from_id} not found`);
+
     const newPublicOfferIds: string[] = [];
     const newDraftOfferIds: string[] = [];
 
@@ -81,43 +83,59 @@ export class ManageOfferFunctions {
       newDraftOfferIds.push(...newOfferIds);
     }
 
-    await to_service.addOffersIds(to_id, { publicOffersToMove: newPublicOfferIds, draftOffersToMove: newDraftOfferIds }, session);
+    const updateToEntity = {};
+    if (newPublicOfferIds.length) {
+      updateToEntity["$push"] = updateToEntity["$push"] || {};
+      updateToEntity["$push"]["public_offers"] = { $each: newPublicOfferIds };
+    }
 
+    if (newDraftOfferIds.length) {
+      updateToEntity["$push"] = updateToEntity["$push"] || {};
+      updateToEntity["$push"]["draft_offers"] = { $each: newDraftOfferIds };
+    }
+
+    await emitFunction(to_id, updateToEntity, session);
     return { newPublicOfferIds, newDraftOfferIds };
   }
 
-  static async moveOffersToAnotherEntity<T extends OfferManager, S extends OfferManagerService>(
-    offerService: OfferService,
-    model: Model<T>,
-    id: string,
+  static async moveOffersToAnotherEntity<F extends OfferManager, T extends OfferManager>(
+    from_model: Model<F>,
+    from_id: string,
     to_id: string,
-    to_service: S,
     moveOffersRequestDto: MoveOffersRequestDto,
+    emitFunction: (group_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) => Promise<void>,
     session: ClientSession,
   ) {
-    const entity = await model.findById(id, session);
-    const publicOffersToMove: string[] = [];
-    const draftOffersToMove: string[] = [];
+    const fromEntity = await from_model.findById(from_id, null, { session });
+    if (!fromEntity) throw new BadRequestException(`Entity with ID ${from_id} not found in ${from_model.modelName}`);
 
-    entity.public_offers = entity.public_offers.filter((offerId) => {
-      if (moveOffersRequestDto.publicOffersToMove?.includes(offerId)) {
-        publicOffersToMove.push(offerId);
-        return false;
+    const { publicOffersToMove, draftOffersToMove } = moveOffersRequestDto;
+
+    if (publicOffersToMove?.length || draftOffersToMove?.length) {
+      const updateFromEntity = {};
+
+      if (publicOffersToMove?.length) {
+        updateFromEntity["$pull"] = updateFromEntity["$pull"] || {};
+        updateFromEntity["$pull"]["public_offers"] = { $in: publicOffersToMove };
       }
-      return true;
-    });
-
-    entity.draft_offers = entity.draft_offers.filter((offerId) => {
-      if (moveOffersRequestDto.draftOffersToMove?.includes(offerId)) {
-        draftOffersToMove.push(offerId);
-        return false;
+      if (draftOffersToMove?.length) {
+        updateFromEntity["$pull"] = updateFromEntity["$pull"] || {};
+        updateFromEntity["$pull"]["draft_offers"] = { $in: draftOffersToMove };
       }
-      return true;
-    });
 
-    await to_service.addOffersIds(to_id, { publicOffersToMove, draftOffersToMove }, session);
+      const updateToEntity = {};
+      if (publicOffersToMove?.length) {
+        updateToEntity["$push"] = updateToEntity["$push"] || {};
+        updateToEntity["$push"]["public_offers"] = { $each: publicOffersToMove };
+      }
+      if (draftOffersToMove?.length) {
+        updateToEntity["$push"] = updateToEntity["$push"] || {};
+        updateToEntity["$push"]["draft_offers"] = { $each: draftOffersToMove };
+      }
 
-    await entity.save({ session });
+      from_model.updateOne({ _id: from_id }, updateFromEntity, { session });
+      await emitFunction(to_id, updateToEntity, session);
+    }
   }
 
   static async unpublishPublicOffer<T extends OfferManager>(

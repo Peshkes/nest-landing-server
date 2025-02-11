@@ -1,6 +1,6 @@
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { ClientSession } from "mongoose";
-import GroupModel from "../persistanse/group.model";
+import GroupModel from "../persistanse/group.schema";
 
 export async function addOffersToGroupQuery(group_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
   const updateFields: any = {};

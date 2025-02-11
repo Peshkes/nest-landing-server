@@ -11,6 +11,4 @@ const baseTierSchema = new mongoose.Schema({
   },
 });
 
-const BaseTierModel = mongoose.model("BaseTier", baseTierSchema);
-
-export default BaseTierModel;
+export default baseTierSchema;

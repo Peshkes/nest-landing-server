@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { PublicOffer } from "../offer.types";
 
-const publicOffer = new mongoose.Schema(
+const publicOfferSchema = new mongoose.Schema<PublicOffer>(
   {
     _id: {
       type: String,
@@ -28,6 +29,4 @@ const publicOffer = new mongoose.Schema(
   { timestamps: true },
 );
 
-const PublicOfferModel = mongoose.model("PublicOffer", publicOffer);
-
-export default PublicOfferModel;
+export default publicOfferSchema;

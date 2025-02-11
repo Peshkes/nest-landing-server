@@ -1,6 +1,6 @@
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { ClientSession } from "mongoose";
-import UserModel from "../persistence/user.model";
+import UserModel from "../persistence/user.schema";
 
 export async function addOffersToUserQuery(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
   const updateFields: any = {};
