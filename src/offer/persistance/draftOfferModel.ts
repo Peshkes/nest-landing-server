@@ -16,7 +16,7 @@ const draftOfferSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { _id: false },
+  { timestamps: true },
 );
 
 const DraftOfferModel = mongoose.model("DraftOffer", draftOfferSchema);

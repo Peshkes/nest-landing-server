@@ -25,10 +25,6 @@ export class OfferService {
     }
   }
 
-  async getOffersByUserId(id: string) {
-    return Promise.resolve(undefined);
-  }
-
   async getAllPublicOffers(): Promise<DraftOfferDto[]> {
     try {
       return await PublicOfferModel.find();

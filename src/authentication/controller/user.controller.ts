@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { UserService } from "../service/user.service";
 import { PasswordDto } from "../dto/password.dto";
 import { EmailDto } from "../dto/email.dto";
@@ -8,6 +8,7 @@ import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
+import { GetOffersPaginatedDto } from "../dto/get-offers-paginated.dto";
 
 @Controller("user")
 export class UserController {
@@ -23,6 +24,12 @@ export class UserController {
   @UseGuards(OwnerAccessGuard)
   async getUser(@Param("id") id: string) {
     return await this.userService.getUser(id);
+  }
+
+  @Get("/offers/:id")
+  @UseGuards(OwnerAccessGuard)
+  async getOffersByUserId(@Param("id") id: string, @Query() query: GetOffersPaginatedDto) {
+    return await this.userService.getOffersByUserId(id, query.page, query.limit, query.roles, query.statuses);
   }
 
   @Post("/offer/:id")

@@ -28,12 +28,6 @@ export class OfferController {
     return await this.offerService.getPublicOfferByOfferId(offer_id);
   }
 
-  @Get("/:id")
-  @UseGuards(OwnerAccessGuard)
-  async getOffersByUserId(@Param("id") id: string) {
-    return await this.offerService.getOffersByUserId(id);
-  }
-
   @Put("/draft/:id")
   @UseGuards(OwnerAccessGuard)
   async updateDraftOfferByUserId(@Param("id") id: string, @Body() newOffer: DraftOfferDto) {

@@ -14,6 +14,7 @@ import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
+import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
 
 @Injectable()
 export class UserService {
@@ -46,6 +47,10 @@ export class UserService {
     } catch (error: any) {
       throw new RuntimeException(`Ошибка при получении аккаунта: ${error.message}`);
     }
+  }
+
+  async getOffersByUserId(id: string, page: number, limit: number, roles: string[], statuses: string[]) {
+    return getAllPaginatedOffersQuery(id, roles, statuses, page, limit);
   }
 
   async removeUser(id: string) {
