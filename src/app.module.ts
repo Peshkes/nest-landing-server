@@ -16,6 +16,17 @@ import { TierModule } from "./tier/tier.module";
 import { RedisModule } from "./redis/redis.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 
+/*
+DESCRIPTION
+
+Main modules: Authentication, Group, Subscription
+Service modules: Share, Tier, Redis, Offer
+
+Connections:
+  Main <-> Main via emitter
+  Main -> Service via DI
+*/
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
