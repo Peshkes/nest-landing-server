@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import SalesTierModel from "../persistance/sales-tier.model";
 import { SalesTierDto } from "../dto/tier.sales.dto";
+import { ClientSession } from "mongoose";
 
 @Injectable()
 export class TierServiceSales {
@@ -34,6 +35,15 @@ export class TierServiceSales {
         sales_price: salesTier.sales_price,
         expiration_date: salesTier.expiration_date,
       };
+    } catch (error: any) {
+      throw new Error(`Ошибка при получении тира: ${error.message}`);
+    }
+  };
+  getSessionedSalesTierById = async (id: string, session: ClientSession): Promise<SalesTierDto> => {
+    try {
+      const salesTier = await SalesTierModel.findById(id).session(session);
+      if (!salesTier) throw new Error("Тиры с таким ID: " + id + " не найдено");
+      return salesTier;
     } catch (error: any) {
       throw new Error(`Ошибка при получении тира: ${error.message}`);
     }

@@ -3,7 +3,7 @@ import { NOT_OBJECT, NOT_ONE_OF_PAYMENT_STATUS_VALUES, NOT_STRING } from "../../
 import { PaymentStatus } from "./payment-status.enum";
 import { PaymentSystems } from "./payment-systems.enum";
 
-export declare class PaymentDto {
+export declare class RefundDto {
   @IsString({ message: NOT_STRING })
   payment_id: string;
   @IsString({ message: NOT_STRING })
@@ -20,9 +20,9 @@ export declare class PaymentDto {
   description: string;
   @Object({ message: NOT_OBJECT })
   payment_details: object;
+
   // @IsNumber()
   // timestamp: number;
-  //
   // @IsObject()
   // @ValidateNested()
   // @Type(() => PayerDto)
@@ -31,6 +31,6 @@ export declare class PaymentDto {
   // @ValidateNested()
   // @Type(() => DetailsDto)
   // details: DetailsDto;
-  // @IsNumber()
-  // duration: number | null;
+  // @IsString({ message: NOT_STRING })
+  // description: string;
 }

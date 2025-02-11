@@ -110,8 +110,8 @@ export class UserController {
 
   @Put("/subscribe/:id")
   @UseGuards(OwnerAccessGuard)
-  async addSubscription(@Param("id") id: string, @Body() subscription: SubscriptionDto) {
+  async addSubscription(@Param("id") id: string, @Param() tier_id: string) {
     console.log("subscription started in user controller");
-    await this.userService.addSubscription(id, subscription);
+    await this.userService.addSubscription(id, tier_id);
   }
 }
