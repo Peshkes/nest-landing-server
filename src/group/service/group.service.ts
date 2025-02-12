@@ -20,7 +20,6 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import { red } from "chalk";
 
 @Injectable()
 export class GroupService implements OfferManagerService {
