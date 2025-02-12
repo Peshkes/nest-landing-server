@@ -15,7 +15,6 @@ import { MailService } from "../../share/services/mailing.service";
 import { SubscriptionService } from "../../subscription/service/subscription.service";
 import { AuthException } from "../error/authentication-exception.class";
 import { runSession } from "../../share/functions/run-session";
-import SubscriptionModel from "../../subscription/persistanse/subscription.model";
 import { PaymentSystems } from "../../subscription/dto/payment-systems.enum";
 
 @Injectable()
@@ -136,7 +135,7 @@ export class UserService {
   }
 
   async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
-    return this.runSubscriptionSession(async (session) => {
+    return this.runUserSession(async (session) => {
       const account: User | null = await UserModel.findById(id);
       if (!account) throw new BadRequestException("Пользователь не найден");
       if (account && !account.subscription) {
@@ -186,10 +185,10 @@ export class UserService {
   async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
 
   //Utils
-  private async runSubscriptionSession(
+  private async runUserSession(
     callback: (session: ClientSession) => Promise<any>,
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
-    return await runSession(SubscriptionModel, callback, customError);
+    return await runSession(UserModel, callback, customError);
   }
 }

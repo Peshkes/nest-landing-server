@@ -6,7 +6,7 @@ import { PaymentDto } from "../dto/payment.dto";
 import { SubscriptionException } from "../errors/subscription-exception.classes";
 import { RedisService } from "../../redis/service/redis.service";
 import UserModel from "../../authentication/persistence/user.model";
-import { PaymentCheckData, SalesTier } from "../types";
+import { PaymentCheckData, SalesTier, Statuses } from "../types";
 import { RefundDto } from "../dto/refund.dto";
 import PaymentModel from "../persistanse/payment.model";
 import { PaymentStatus } from "../dto/payment-status.enum";
@@ -66,23 +66,28 @@ export class SubscriptionService {
     return this.runSubscriptionSession(async (session) => {
       const key = receivedPaymentInfo.key;
       let storedPayment: PaymentCheckData = JSON.parse(await this.redisService.getValue(key));
+      await this.redisService.extendTtL(key, 1800);
       if (!storedPayment) {
         storedPayment = await PaymentModel.findById(receivedPaymentInfo.payment_id).select("-description -payment_details").lean();
+        await this.redisService.setValue(key, 1800);
+        //TODO add to redis
       }
-      if (receivedPaymentInfo.sum !== storedPayment.sum)
-        throw SubscriptionException.WrongPaymentException(key, HttpStatus.BAD_GATEWAY || HttpStatus.INTERNAL_SERVER_ERROR); //TODO решить как быть с ошибкой
+      if (receivedPaymentInfo.sum !== storedPayment.sum) this.cancelPayment(receivedPaymentInfo.payment_id);
+      const receivedStatus = receivedPaymentInfo.status;
+      if (
+        (receivedStatus !== Statuses.failed.name && Statuses[receivedStatus].weight <= Statuses[storedPayment.status].weight) ||
+        (receivedStatus === Statuses.failed.name && Statuses[storedPayment.status].name === Statuses.failed.name)
+      )
+        return;
+      if (
+        (receivedStatus === Statuses.failed.name && Statuses[storedPayment.status].name === Statuses.success.name) ||
+        (receivedStatus === Statuses.success.name && Statuses[storedPayment.status].name === Statuses.failed.name)
+      )
+        this.confirmStatus(receivedPaymentInfo.payment_id);
+      //throw SubscriptionException.WrongPaymentException(key, HttpStatus.BAD_GATEWAY || HttpStatus.INTERNAL_SERVER_ERROR); //TODO решить как быть с ошибкой
       const duration: number = storedPayment.duration;
       const receivedDescription = receivedPaymentInfo.description;
-      await SubscriptionModel.findOneAndUpdate(
-        { key },
-        {
-          is_active: true,
-          start_date: new Date(Date.now()),
-          expiration_date: duration && new Date(Date.now() + duration),
-          $push: { description: receivedDescription && "/n" + receivedDescription },
-        },
-        { new: true, session },
-      );
+
       await PaymentModel.findOneAndUpdate(
         { _id: storedPayment._id },
         {
@@ -90,6 +95,17 @@ export class SubscriptionService {
           transaction_id: receivedPaymentInfo.transaction_id,
           description: receivedPaymentInfo.transaction_id,
           payment_details: receivedPaymentInfo.payment_details,
+        },
+        { new: true, session },
+      );
+      //TODO if success
+      await SubscriptionModel.findOneAndUpdate(
+        { key },
+        {
+          is_active: true,
+          start_date: new Date(Date.now()),
+          expiration_date: duration && new Date(Date.now() + duration),
+          $push: { description: receivedDescription && "/n" + receivedDescription },
         },
         { new: true, session },
       );
@@ -151,6 +167,10 @@ export class SubscriptionService {
   }
 
   private initRefund(key: string) {}
+
+  private cancelPayment(paymentId: string) {}
+
+  private confirmStatus(paymentId: string) {}
 
   async receiveRefundInfo(refund: RefundDto) {
     const key = refund.key;
