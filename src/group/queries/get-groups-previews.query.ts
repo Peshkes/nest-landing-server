@@ -1,8 +1,8 @@
-import GroupAccessModel from "../persistanse/group-access.schema";
-import { GroupPreview } from "../group.types";
+import { GroupAccess, GroupPreview } from "../group.types";
+import { Model } from "mongoose";
 
-export const getGroupsPreviewsQuery = async (user_id: string): Promise<GroupPreview[]> => {
-  return GroupAccessModel.aggregate([
+export const getGroupsPreviewsQuery = async (user_id: string, model: Model<GroupAccess>): Promise<GroupPreview[]> => {
+  return model.aggregate([
     { $match: { user_id } },
     {
       $lookup: {

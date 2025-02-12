@@ -146,7 +146,7 @@ export class UserService implements OfferManagerService {
   }
 
   async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession): Promise<void> {
-    await addOffersToUserQuery(user_id, moveOffersRequestDto, session);
+    await addOffersToUserQuery(user_id, moveOffersRequestDto, this.userModel, session);
   }
 
   //EMITTER PRODUCERS

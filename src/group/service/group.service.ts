@@ -50,7 +50,7 @@ export class GroupService implements OfferManagerService {
 
   async getGroupWithAdditionalData(group_id: string): Promise<GroupWithAdditionalData> {
     try {
-      const groupData = await getGroupWithMembersQuery(group_id);
+      const groupData = await getGroupWithMembersQuery(group_id, this.groupModel);
       if (!groupData) throw new BadRequestException("Группа не найдена");
 
       return groupData;
@@ -61,7 +61,7 @@ export class GroupService implements OfferManagerService {
 
   async getGroupsPreviews(user_id: string): Promise<GroupPreview[]> {
     try {
-      return await getGroupsPreviewsQuery(user_id);
+      return await getGroupsPreviewsQuery(user_id, this.groupAccessModel);
     } catch (error: any) {
       throw GroupException.GetGroupsPreviewsException(error.message, error.statusCode);
     }
@@ -74,7 +74,7 @@ export class GroupService implements OfferManagerService {
     roles: string[],
   ): Promise<{ data: GroupPreview[]; total: number }> {
     try {
-      return await getGroupsWithPaginationQuery(user_id, page, limit, roles);
+      return await getGroupsWithPaginationQuery(user_id, page, limit, roles, this.groupAccessModel);
     } catch (error) {
       throw GroupException.GetGroupsWithPagination(error.message, error.statusCode);
     }
@@ -268,7 +268,7 @@ export class GroupService implements OfferManagerService {
   }
 
   async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
-    await addOffersToGroupQuery(user_id, moveOffersRequestDto, session);
+    await addOffersToGroupQuery(user_id, moveOffersRequestDto, this.groupModel, session);
   }
 
   //EMITTER PRODUCERS

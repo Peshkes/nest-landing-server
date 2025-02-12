@@ -1,6 +1,13 @@
-import GroupAccessModel from "../persistanse/group-access.schema";
+import { Model } from "mongoose";
+import { GroupAccess } from "../group.types";
 
-export const getGroupsWithPaginationQuery = async (user_id: string, page: number, limit: number, roles: string[]) => {
+export const getGroupsWithPaginationQuery = async (
+  user_id: string,
+  page: number,
+  limit: number,
+  roles: string[],
+  model: Model<GroupAccess>,
+) => {
   const skip = Math.max(0, page) * limit;
 
   const pipeline = [
@@ -43,7 +50,7 @@ export const getGroupsWithPaginationQuery = async (user_id: string, page: number
     },
   ];
 
-  const [result] = await GroupAccessModel.aggregate(pipeline);
+  const [result] = await model.aggregate(pipeline);
   return {
     data: result?.data || [],
     total: result?.total || 0,
