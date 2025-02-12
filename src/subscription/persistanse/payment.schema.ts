@@ -70,7 +70,7 @@ const paymentsSchema = new mongoose.Schema<Payment>(
     },
   },
   {
-    timestamps: true
+    timestamps: true,
   },
 );
 

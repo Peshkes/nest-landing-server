@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { SuperUser } from "../authentication.types";
 
-const superUserSchema = new mongoose.Schema(
+const superUserSchema = new mongoose.Schema<SuperUser>(
   {
     _id: {
       type: String,

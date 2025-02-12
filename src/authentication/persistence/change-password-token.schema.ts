@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
+import { TokenData } from "../authentication.types";
 
-const changePasswordTokenSchema = new mongoose.Schema({
+const changePasswordTokenSchema = new mongoose.Schema<TokenData>({
   _id: {
     type: String,
     required: true,

@@ -8,9 +8,6 @@ export class UserErrors {
   public static readonly POST_ADD_SUBSCRIPTION = "Ошибка при добавлении подписки: ";
 
   public static readonly PUT_PUBLISH_DRAFT_OFFER = "Ошибка при публикации чернового оффера: ";
-  public static readonly PUT_UPDATE_PASSWORD = "Ошибка при обновлении пароля: ";
-  public static readonly PUT_START_RESET_PASSWORD = "Ошибка при запросе на сброс пароля: ";
-  public static readonly PUT_FINISH_RESET_PASSWORD = "Ошибка при завершении сброса пароля: ";
   public static readonly PUT_COPY_TO_GROUP = "Ошибка при копировании офферов в группу: ";
   public static readonly PUT_MOVE_TO_GROUP = "Ошибка при перемещении офферов в группу: ";
   public static readonly PUT_UNPUBLISH_OFFER = "Ошибка при снятии оффера с публикации: ";

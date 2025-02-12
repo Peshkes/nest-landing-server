@@ -1,14 +1,8 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { ResetPasswordObject, User } from "../authentication.types";
+import { User } from "../authentication.types";
 import { ClientSession, Model, Promise } from "mongoose";
-import { PasswordDto } from "../dto/password.dto";
-import bcrypt from "bcryptjs";
-import { EmailDto } from "../dto/email.dto";
-
-import crypto from "crypto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { MailService } from "../../share/services/mailing.service";
 import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
 import { runSession } from "../../share/functions/run-session";
 import { UserException } from "../error/user-exception.class";
@@ -24,12 +18,9 @@ import { PaymentSystems } from "../../share/share.types";
 export class UserService implements OfferManagerService {
   constructor(
     @InjectModel("User") private readonly userModel: Model<User>,
-    @InjectModel("ChangePasswordToken") private readonly changePasswordTokenModel: Model<ResetPasswordObject>,
     private readonly eventEmitter: EventEmitter2,
-    private readonly mailService: MailService,
     private readonly offerService: OfferService,
-  ) {
-  }
+  ) {}
 
   //USER METHODS
   async getAllUsers() {
@@ -72,80 +63,18 @@ export class UserService implements OfferManagerService {
     }
   }
 
-  async updatePassword(id: string, passwordDto: PasswordDto) {
-    await this.runUserSession(async (session) => {
-      await this.processUpdatePassword(id, passwordDto, session);
-    }, UserException.UpdatePasswordException);
-  }
-
-  private async processUpdatePassword(id: string, passwordDto: PasswordDto, session: ClientSession) {
-    const account = await this.findUserById(id);
-
-    if (await bcrypt.compare(passwordDto.password, account.password))
-      throw new BadRequestException("Новый пароль не должен совпадать со старым");
-
-    const lastPasswords = account.last_passwords;
-    for (const pass of account.last_passwords) {
-      if (await bcrypt.compare(passwordDto.password, pass))
-        throw new BadRequestException("Этот пароль уже был использован. Пожайлуйста придумайте другой пароль");
-    }
-    lastPasswords.unshift(account.password);
-    if (lastPasswords.length > 3) lastPasswords.pop();
-
-    await this.userModel.updateOne(
-      { account: account._id },
-      {
-        password: await bcrypt.hash(passwordDto.password, 10),
-        lastPasswords: lastPasswords,
-      },
-    ).session(session);
-  }
-
-  async startResetPassword(email: EmailDto) {
-    await this.runUserSession(async (session) => {
-      const existingUser = await this.userModel.findOne(email).session(session);
-      if (!existingUser) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      await this.changePasswordTokenModel.findByIdAndDelete(existingUser._id);
-
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      const hash = await bcrypt.hash(resetToken, 10);
-      await new this.changePasswordTokenModel({
-        _id: existingUser._id,
-        token: hash,
-      }).save({ session });
-
-      await this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
-    }, UserException.StartResetPasswordException);
-  }
-
-  private async sendResetPasswordEmail(email: string, userId: string, token: string) {
-    const link = `localhost:27000/account/reset_password/${userId}/${token}`;
-    await this.mailService.sendMailWithHtmlFromNoReply(
-      email,
-      "Запрос на сброс пароля",
-      `<b>Для сброса пароля пожалуйста пройдите по <a href="${link && link}">этой ссылке</a></b>`,
-    );
-  }
-
-  async finishResetPassword(id: string, token: string, passwordDto: PasswordDto) {
-    await this.runUserSession(async (session) => {
-      const passwordResetToken = await this.changePasswordTokenModel.findByIdAndDelete(id).session(session);
-      if (!passwordResetToken || !(await bcrypt.compare(token, passwordResetToken.token)))
-        throw new BadRequestException("Токен смены пароля некорректен или истек");
-      await this.processUpdatePassword(id, passwordDto, session);
-    }, UserException.FinishResetPasswordException);
-  }
-
   async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
     return this.runUserSession(async (session) => {
       const user = await this.findUserById(id, session);
       if (user && !user.subscription) {
-        await this.userModel.updateOne(
-          { account: id },
-          {
-            subscription: await this.emitAddSubscription(id, tier_id, payment_system, session),
-          },
-        ).session(session);
+        await this.userModel
+          .updateOne(
+            { account: id },
+            {
+              subscription: await this.emitAddSubscription(id, tier_id, payment_system, session),
+            },
+          )
+          .session(session);
       }
     }, UserException.AddSubscriptionException);
   }
@@ -225,21 +154,32 @@ export class UserService implements OfferManagerService {
   }
 
   //EMITTER PRODUCERS
-  private async emitAddOffersToGroupEvent(group_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession): Promise<void> {
-    return new Promise((resolve: () => {}) => {
+  private async emitAddOffersToGroupEvent(
+    group_id: string,
+    moveOffersRequestDto: MoveOffersRequestDto,
+    session: ClientSession,
+  ): Promise<void> {
+    return new Promise((resolve: () => void) => {
       this.eventEmitter.emitAsync("group.add-offers-ids", group_id, moveOffersRequestDto, resolve, session);
     });
   }
 
   private async emitAddSubscription(id: string, tier_id: string, payment_system: PaymentSystems, session: ClientSession): Promise<string> {
-    return new Promise((resolve: (subscription: string) => {}) => {
-      this.eventEmitter.emitAsync("subscription.add-subscription", id, tier_id, payment_system, (subscription: string) => resolve(subscription), session);
+    return new Promise((resolve: (subscription: string) => void) => {
+      this.eventEmitter.emitAsync(
+        "subscription.add-subscription",
+        id,
+        tier_id,
+        payment_system,
+        (subscription: string) => resolve(subscription),
+        session,
+      );
     });
   }
 
   //EMITTER LISTENERS
   @OnEvent("user.exists")
-  async handleUserExistsEvent(userId: string, callback: (result: boolean) => void, session: ClientSession): Promise<void> {
+  async handleUserExistsEvent(userId: string, callback: (result: boolean) => boolean, session: ClientSession): Promise<void> {
     const exists = await this.userModel.exists({ _id: userId }).session(session);
     callback(!!exists);
   }

@@ -26,18 +26,6 @@ export class UserException {
     return new HttpException(UserErrors.PUT_PUBLISH_DRAFT_OFFER + message, status);
   }
 
-  static UpdatePasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
-    return new HttpException(UserErrors.PUT_UPDATE_PASSWORD + message, status);
-  }
-
-  static StartResetPasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
-    return new HttpException(UserErrors.PUT_START_RESET_PASSWORD + message, status);
-  }
-
-  static FinishResetPasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
-    return new HttpException(UserErrors.PUT_FINISH_RESET_PASSWORD + message, status);
-  }
-
   static CopyToGroupException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(UserErrors.PUT_COPY_TO_GROUP + message, status);
   }

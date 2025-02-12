@@ -18,9 +18,9 @@ import changePasswordTokenSchema from "./persistence/change-password-token.schem
       { name: "VerifyEmailToken", schema: verifyEmailTokenSchema },
       { name: "ChangePasswordToken", schema: changePasswordTokenSchema },
     ]),
-    ShareModule
+    ShareModule,
   ],
   controllers: [AuthenticationController, UserController],
-  providers: [AuthenticationService, UserService]
+  providers: [AuthenticationService, UserService],
 })
 export class AuthenticationModule {}

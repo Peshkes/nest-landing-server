@@ -1,14 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { UserService } from "../service/user.service";
-import { PasswordDto } from "../dto/password.dto";
-import { EmailDto } from "../dto/email.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { UserAccessGuard } from "../../share/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { GetOffersPaginatedDto } from "../dto/get-offers-paginated.dto";
-import { PaymentSystems } from "../../subscription/subscription.types";
+import { PaymentSystems } from "../../share/share.types";
 
 @Controller("user")
 export class UserController {
@@ -48,22 +46,6 @@ export class UserController {
   @UseGuards(OwnerAccessGuard)
   async publishDraftOffer(@Param("id") id: string, @Param("offer_id") offer_id: string): Promise<string> {
     return await this.userService.publishDraftOffer(id, offer_id);
-  }
-
-  @Put("/:id")
-  @UseGuards(OwnerAccessGuard)
-  async updatePassword(@Param("id") id: string, @Body() passwordDto: PasswordDto) {
-    return await this.userService.updatePassword(id, passwordDto);
-  }
-
-  @Put("/reset")
-  async startResetPassword(@Param("email") @Body() email: EmailDto) {
-    return await this.userService.startResetPassword(email);
-  }
-
-  @Put("/reset/:id/:token")
-  async finishResetPassword(@Param("id") id: string, @Param("token") token: string, @Body() passwordDto: PasswordDto) {
-    return await this.userService.finishResetPassword(id, token, passwordDto);
   }
 
   @Put("/copy/:id/:group_id")

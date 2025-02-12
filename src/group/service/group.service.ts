@@ -273,7 +273,11 @@ export class GroupService implements OfferManagerService {
   }
 
   //EMITTER PRODUCERS
-  private async emitAddOffersToUserEvent(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession): Promise<void> {
+  private async emitAddOffersToUserEvent(
+    user_id: string,
+    moveOffersRequestDto: MoveOffersRequestDto,
+    session: ClientSession,
+  ): Promise<void> {
     return new Promise((resolve: () => {}) => {
       this.eventEmitter.emitAsync("user.add-offers-ids", user_id, moveOffersRequestDto, resolve, session);
     });

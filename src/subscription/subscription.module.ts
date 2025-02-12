@@ -14,9 +14,9 @@ import subscriptionSchema from "./persistanse/subscription.schema";
       { name: "Subscription", schema: subscriptionSchema },
     ]),
     RedisModule,
-    TierModule],
+    TierModule,
+  ],
   controllers: [SubscriptionController],
   providers: [SubscriptionService],
 })
-
 export class SubscriptionModule {}

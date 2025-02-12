@@ -1,5 +1,4 @@
 import { OfferManager } from "../share/interfaces/offer-manager";
-import { v4 as uuidv4 } from "uuid";
 
 export interface AuthenticationData {
   email: string;
@@ -10,9 +9,12 @@ export interface UserData extends AuthenticationData {
   name: string;
 }
 
-export interface User extends UserData, OfferManager {
+export interface SuperUser extends UserData {
   _id: string;
-  last_passwords: string[];
+  last_passwords: Array<string>;
+}
+
+export interface User extends OfferManager, SuperUser {
   subscription?: string;
   email_verified: boolean;
   phone: string;
@@ -20,12 +22,10 @@ export interface User extends UserData, OfferManager {
   deletion_date: Date;
 }
 
-export interface SuperUser {
+export interface TokenData {
   _id: string;
-  name: string;
-  email: string;
-  password: string;
-  lastPasswords: Array<string>;
+  token: string;
+  createdAt: Date;
 }
 
 export type Tokens = {
@@ -38,11 +38,7 @@ export type SignInResponse = {
   tokens: Tokens;
 };
 
-export type PublicUserData = {
-  email: string;
-  name: string;
-  _id: string;
-};
+export type PublicUserData = Pick<User, "_id" | "email" | "name" | "email_verified">;
 
 export type AuthenticationResult = {
   accessToken: string;

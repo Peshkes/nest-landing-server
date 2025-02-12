@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
+import { TokenData } from "../authentication.types";
 
-const verifyEmailTokenSchema = new mongoose.Schema({
-  userId: {
+const verifyEmailTokenSchema = new mongoose.Schema<TokenData>({
+  _id: {
     type: String,
     required: true,
     ref: "user",
