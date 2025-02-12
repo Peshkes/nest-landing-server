@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { User } from "../authentication.types";
-import { ClientSession, Model, Promise } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
@@ -39,10 +39,6 @@ export class UserService implements OfferManagerService {
     } catch (error: any) {
       throw UserException.GetUserException(error.message, error.statusCode);
     }
-  }
-
-  async userExistsById(id: string, session: ClientSession) {
-    return this.userModel.exists({ id }).session(session);
   }
 
   async getOffersByUserId(id: string, page: number, limit: number, roles: string[], statuses: string[]) {
@@ -165,7 +161,7 @@ export class UserService implements OfferManagerService {
   }
 
   private async emitAddSubscription(id: string, tier_id: string, payment_system: PaymentSystems, session: ClientSession): Promise<string> {
-    return new Promise((resolve: (subscription: string) => void) => {
+    return new Promise((resolve) => {
       this.eventEmitter.emitAsync(
         "subscription.add-subscription",
         id,

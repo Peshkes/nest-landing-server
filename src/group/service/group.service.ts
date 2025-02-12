@@ -9,7 +9,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
-import { ClientSession, Model, Promise } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { RedisService } from "../../redis/service/redis.service";
 import { getGroupWithMembersQuery } from "../queries/get-group-with-members.query";
@@ -20,6 +20,7 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { red } from "chalk";
 
 @Injectable()
 export class GroupService implements OfferManagerService {
@@ -133,14 +134,13 @@ export class GroupService implements OfferManagerService {
       const addRecord = JSON.parse(await this.redisService.getValue(token));
       if (!addRecord) throw new BadRequestException("Токен для добавления некорректен или истек");
 
-      await Promise.all([
-        new this.groupAccessModel({
-          group_id: addRecord.group_id,
-          user_id,
-          role: addRecord.role,
-        }).save(),
-        await this.redisService.deleteValue(token),
-      ]);
+      const mongoPromise = new this.groupAccessModel({
+        group_id: addRecord.group_id,
+        user_id,
+        role: addRecord.role,
+      }).save();
+      const redisPromise = this.redisService.deleteValue(token);
+      await Promise.all([mongoPromise, redisPromise]);
     } catch (error: any) {
       throw GroupException.FinishAddingMemberException(error.message, error.statusCode);
     }
@@ -278,7 +278,7 @@ export class GroupService implements OfferManagerService {
     moveOffersRequestDto: MoveOffersRequestDto,
     session: ClientSession,
   ): Promise<void> {
-    return new Promise((resolve: () => {}) => {
+    return new Promise((resolve) => {
       this.eventEmitter.emitAsync("user.add-offers-ids", user_id, moveOffersRequestDto, resolve, session);
     });
   }

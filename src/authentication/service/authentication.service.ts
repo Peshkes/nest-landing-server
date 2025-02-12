@@ -61,8 +61,7 @@ export class AuthenticationService {
     try {
       if (!token) throw new BadRequestException("Токен не пришел ");
       const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token);
-      const user = await this.userModel.findById(decodedToken.userId);
-      if (!user) throw new BadRequestException("Пользователь не найден");
+      const user = await this.findUserById(decodedToken.userId);
       const tokens = this.jwtService.generateTokenPair(decodedToken.userId);
       return {
         user: this.createPublicUserData(user),
@@ -103,16 +102,13 @@ export class AuthenticationService {
     await this.runUserSession(async (session) => {
       const existingUser = await this.userModel.findOne(email).session(session);
       if (!existingUser) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      await this.changePasswordTokenModel.findByIdAndDelete(existingUser._id);
-
       const resetToken = crypto.randomBytes(32).toString("hex");
+      await this.changePasswordTokenModel.findByIdAndDelete(existingUser._id);
       const hash = await bcrypt.hash(resetToken, 10);
-      await new this.changePasswordTokenModel({
-        _id: existingUser._id,
-        token: hash,
-      }).save({ session });
 
-      await this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
+      const changePromise = new this.changePasswordTokenModel({ _id: existingUser._id, token: hash });
+      const sendResetPromise = this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
+      await Promise.all(sendResetPromise, changePromise.save({ session }));
     }, AuthException.StartResetPasswordException);
   }
 
@@ -171,12 +167,12 @@ export class AuthenticationService {
     const verifyDataExists = await this.verifyEmailTokenModel.exists({ _id: user._id }).session(session);
     if (!verifyDataExists) {
       const verifyToken = crypto.randomBytes(32).toString("hex");
-      await new this.verifyEmailTokenModel({
+      const mongoPromise = new this.verifyEmailTokenModel({
         _id: user._id,
         token: verifyToken,
       }).save({ session });
-
-      await this.sendVerifyEmailEmail(user.email, user._id, verifyToken);
+      const sendEmailPromise = this.sendVerifyEmailEmail(user.email, user._id, verifyToken);
+      await Promise.all([mongoPromise, sendEmailPromise]);
     }
   }
 
