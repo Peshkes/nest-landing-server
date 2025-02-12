@@ -7,5 +7,6 @@ import { TierServiceSales } from "./service/tier.service.sales";
 @Module({
   controllers: [TierControllerBase, TierControllerSales],
   providers: [TierServiceBase, TierServiceSales],
+  exports: [TierServiceSales],
 })
 export class TierModule {}

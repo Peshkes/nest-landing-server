@@ -1,11 +1,11 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import UserModel from "../../authentication/persistence/user.model";
+import UserModel from "../../authentication/persistence/user.schema";
 import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../services/jwt.service";
 import { RequestWithUser } from "../interfaces/request-with-user.interface";
 import chalk from "chalk";
-import SuperUserModel from "../../authentication/persistence/super-user.model";
+import SuperUserModel from "../../authentication/persistence/super-user.schema";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {
@@ -29,14 +29,14 @@ export class JwtRequestMiddleware implements NestMiddleware {
         console.log(chalk.red(`[JWT Middleware] User not found for token in ${req.method} ${req.originalUrl}`));
         return res.status(404).json({ message: "Пользователь не найден" });
       } else {
-        console.log(chalk.red(`[JWT Middleware] User authorized: ${user._id} for ${req.method} ${req.originalUrl}`));
+        console.log(chalk.green(`[JWT Middleware] User authorized: ${user._id} for ${req.method} ${req.originalUrl}`));
         req.user = user;
         if (jwtDecoded.superAccess) req.superAccess = true;
         next();
       }
     } catch (error: any) {
       console.error(chalk.red(`[JWT Middleware] Error verifying token for ${req.method} ${req.originalUrl}: ${error.message}`));
-      return res.status(500).json({ message: `Ошибка при проверке доступа: ${error.message}` });
+      return res.status(error.statusCode || 500).json({ message: `Ошибка при проверке доступа: ${error.message}` });
     }
   }
 }

@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { SuperUser } from "../authentication.types";
 
-const superUserSchema = new mongoose.Schema(
+const superUserSchema = new mongoose.Schema<SuperUser>(
   {
     _id: {
       type: String,
@@ -24,16 +25,14 @@ const superUserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    lastPasswords: {
+    last_passwords: {
       type: [String],
       required: true,
     },
   },
   {
     timestamps: true,
-    _id: true,
   },
 );
 
-const SuperUserModel = mongoose.model("SuperUser", superUserSchema);
-export default SuperUserModel;
+export default superUserSchema;

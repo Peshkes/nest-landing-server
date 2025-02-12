@@ -18,7 +18,23 @@ export class AuthException {
     return new HttpException(AuthErrors.POST_REFRESH + message, status);
   }
 
-  static AddSubscriptionException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
-    return new HttpException(AuthErrors.POST_ADD_SUBSCRIPTION + message, status);
+  static UpdatePasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.PUT_UPDATE_PASSWORD + message, status);
+  }
+
+  static StartResetPasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.PUT_START_RESET_PASSWORD + message, status);
+  }
+
+  static FinishResetPasswordException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.PUT_FINISH_RESET_PASSWORD + message, status);
+  }
+
+  static StartVerifyEmailException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.PUT_START_VERIFY_EMAIL + message, status);
+  }
+
+  static FinishVerifyEmailException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(AuthErrors.PUT_FINISH_VERIFY_EMAIL + message, status);
   }
 }

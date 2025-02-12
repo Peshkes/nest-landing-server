@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
+import { TokenData } from "../authentication.types";
 
-const changePasswordTokenSchema = new mongoose.Schema({
-  userId: {
+const changePasswordTokenSchema = new mongoose.Schema<TokenData>({
+  _id: {
     type: String,
     required: true,
     ref: "user",
@@ -17,5 +18,4 @@ const changePasswordTokenSchema = new mongoose.Schema({
   },
 });
 
-const ChangePasswordTokenModel = mongoose.model("ChangePasswordToken", changePasswordTokenSchema);
-export default ChangePasswordTokenModel;
+export default changePasswordTokenSchema;

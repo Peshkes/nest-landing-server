@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import SalesTierModel from "../persistance/sales-tier.model";
+import SalesTierSchema from "../persistance/sales-tier.schema";
 import { SalesTierDto } from "../dto/tier.sales.dto";
 import { ClientSession } from "mongoose";
 
@@ -8,7 +8,7 @@ export class TierServiceSales {
   addNewSalesTier = async (salesTier: SalesTierDto) => {
     try {
       const { name, duration, price, base_tier, sales_price, expiration_date } = salesTier;
-      const newTier = new SalesTierModel({
+      const newTier = new SalesTierSchema({
         name,
         duration,
         price,
@@ -24,7 +24,7 @@ export class TierServiceSales {
 
   getSalesTierById = async (id: string): Promise<SalesTierDto> => {
     try {
-      const salesTier: SalesTierDto | null = await SalesTierModel.findById(id);
+      const salesTier: SalesTierDto | null = await SalesTierSchema.findById(id);
       if (!salesTier) throw new Error("Тиры с таким ID: " + id + " не найдено");
       return {
         _id: salesTier._id,
@@ -41,7 +41,7 @@ export class TierServiceSales {
   };
   getSessionedSalesTierById = async (id: string, session: ClientSession): Promise<SalesTierDto> => {
     try {
-      const salesTier = await SalesTierModel.findById(id).session(session);
+      const salesTier = await SalesTierSchema.findById(id).session(session);
       if (!salesTier) throw new Error("Тиры с таким ID: " + id + " не найдено");
       return salesTier;
     } catch (error: any) {
@@ -51,7 +51,7 @@ export class TierServiceSales {
 
   getAllSalesTiers = async (): Promise<SalesTierDto[]> => {
     try {
-      const salesTiers: SalesTierDto[] = await SalesTierModel.find();
+      const salesTiers: SalesTierDto[] = await SalesTierSchema.find();
       return salesTiers.map((salesTier) => ({
         _id: salesTier._id,
         name: salesTier.name,
@@ -68,7 +68,7 @@ export class TierServiceSales {
 
   deleteSalesTierById = async (id: string): Promise<SalesTierDto> => {
     try {
-      const salesTier: SalesTierDto | null = await SalesTierModel.findByIdAndDelete(id);
+      const salesTier: SalesTierDto | null = await SalesTierSchema.findByIdAndDelete(id);
       if (!salesTier) throw new Error("Тира с таким ID: " + id + " не найдено");
       return {
         _id: salesTier._id,
@@ -87,7 +87,7 @@ export class TierServiceSales {
   async updateSalesTierById(id: string, newSalesTier: SalesTierDto) {
     try {
       const { name, duration, price, base_tier, sales_price, expiration_date } = newSalesTier;
-      const updatedTier = await SalesTierModel.findByIdAndUpdate(
+      const updatedTier = await SalesTierSchema.findByIdAndUpdate(
         id,
         {
           name,

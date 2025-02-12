@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { DraftOffer } from "../offer.types";
 
-const draftOfferSchema = new mongoose.Schema(
+const draftOfferSchema = new mongoose.Schema<DraftOffer>(
   {
     _id: {
       type: String,
@@ -16,9 +17,7 @@ const draftOfferSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { _id: false },
+  { timestamps: true },
 );
 
-const DraftOfferModel = mongoose.model("DraftOffer", draftOfferSchema);
-
-export default DraftOfferModel;
+export default draftOfferSchema;

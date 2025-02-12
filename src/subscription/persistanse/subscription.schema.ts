@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { Subscription } from "../subscription.types";
 
-const subscriptionSchema = new mongoose.Schema({
+const subscriptionSchema = new mongoose.Schema<Subscription>({
   _id: {
     type: String,
     default: uuidv4,
@@ -38,6 +39,4 @@ const subscriptionSchema = new mongoose.Schema({
   },
 });
 
-const SubscriptionModel = mongoose.model("Subscription", subscriptionSchema);
-
-export default SubscriptionModel;
+export default subscriptionSchema;

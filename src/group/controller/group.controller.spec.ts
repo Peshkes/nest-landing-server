@@ -94,7 +94,7 @@ describe("GroupController", () => {
         {
           _id: "1",
           name: "Test Group",
-          role: Roles.USER,
+          role: Roles.user,
         },
       ];
 
@@ -149,7 +149,7 @@ describe("GroupController", () => {
   describe("startAddingMember", () => {
     it("should start adding a member successfully", async () => {
       const groupId = "1";
-      const groupMember: GroupMemberDto = { user_id: "2", email: "sds@sd.ru", role: Roles.USER };
+      const groupMember: GroupMemberDto = { user_id: "2", email: "sds@sd.ru", role: Roles.user };
 
       jest.spyOn(service, "startAddingMember").mockResolvedValue(undefined);
 
@@ -159,7 +159,7 @@ describe("GroupController", () => {
 
     it("should throw a custom error if member adding fails", async () => {
       const groupId = "1";
-      const groupMember: GroupMemberDto = { user_id: "2", email: "sds@sd.ru", role: Roles.USER };
+      const groupMember: GroupMemberDto = { user_id: "2", email: "sds@sd.ru", role: Roles.user };
 
       jest.spyOn(service, "startAddingMember").mockRejectedValue(new InternalServerErrorException("Failed to start adding member"));
 
@@ -428,7 +428,7 @@ describe("GroupController", () => {
     it("should remove user from group successfully", async () => {
       const groupId = "1";
       const userId = "456";
-      const expectedGroupAccess: GroupAccess = { group_id: "1", user_id: "456", role: Roles.USER };
+      const expectedGroupAccess: GroupAccess = { group_id: "1", user_id: "456", role: Roles.user };
 
       jest.spyOn(service, "removeUserFromGroup").mockResolvedValue(expectedGroupAccess);
 
@@ -456,7 +456,7 @@ describe("GroupController", () => {
     it("should delete group successfully", async () => {
       const groupId = "1";
       const group: Group = { _id: "1", name: "Test Group", publicOffers: [], draftOffers: [], settings: {} };
-      const groupAccesses: GroupAccess[] = [{ group_id: "1", user_id: "456", role: Roles.USER }];
+      const groupAccesses: GroupAccess[] = [{ group_id: "1", user_id: "456", role: Roles.user }];
       const expectedFullGroupData: FullGroupData = { group, groupAccesses };
 
       jest.spyOn(service, "deleteGroup").mockResolvedValue(expectedFullGroupData);

@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
+import { TokenData } from "../authentication.types";
 
-const verifyEmailTokenSchema = new mongoose.Schema({
-  userId: {
+const verifyEmailTokenSchema = new mongoose.Schema<TokenData>({
+  _id: {
     type: String,
     required: true,
     ref: "user",
@@ -17,5 +18,4 @@ const verifyEmailTokenSchema = new mongoose.Schema({
   },
 });
 
-const VerifyEmailTokenModel = mongoose.model("VerifyEmailToken", verifyEmailTokenSchema);
-export default VerifyEmailTokenModel;
+export default verifyEmailTokenSchema;

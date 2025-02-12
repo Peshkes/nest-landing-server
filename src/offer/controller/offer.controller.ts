@@ -1,69 +1,54 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { OfferService } from "../service/offer.service";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { PublicOfferDto } from "../dto/public-offer.dto";
+import { UserAccessGuard } from "../../share/guards/group-access.guard";
 
 @Controller("offer")
 export class OfferController {
   constructor(private readonly offerService: OfferService) {}
 
-  @Post("")
-  @UseGuards(OwnerAccessGuard)
-  async addNewOffer(@Body() offer: DraftOfferDto) {
-    return await this.offerService.addNewOffer({ name: offer.name, body: offer.body });
-  }
-  //     res.status(400).json({ message: "Ошибка при создании коммерческого предложения: " + error.message });
-
+  //SUPER USER
   @Get("/all_draft")
   @UseGuards(SuperUserAccessGuard)
   async getAllDraftOffers() {
     return await this.offerService.getAllDraftOffers();
   }
-  //     res.status(400).json({message: error.message});
 
   @Get("/all_public")
   @UseGuards(SuperUserAccessGuard)
   async getAllPublicOffers() {
     return await this.offerService.getAllPublicOffers();
   }
-  //     res.status(400).json({message: error.message});
 
-  @Get("/:id")
-  @UseGuards(OwnerAccessGuard)
-  async getOfferById(@Param("id") id: string) {
-    return await this.offerService.getOfferById(id);
+  //NORMAL USER
+  @Get("/:offer_id")
+  async getPublicOfferByOfferId(@Param("offer_id") offer_id: string) {
+    return await this.offerService.getPublicOfferByOfferId(offer_id);
   }
-  //    res.status(400).json({message: error.message});
 
-  //TODO move account
-  @Delete("/public/:id")
+  @Put("/draft/:id")
   @UseGuards(OwnerAccessGuard)
-  async deletePublicOfferById(@Param("id") id: string) {
-    return await this.offerService.deletePublicOfferById(id);
+  async updateDraftOfferByUserId(@Param("id") id: string, @Body() newOffer: DraftOfferDto) {
+    return await this.offerService.updateDraftOfferByUserId(newOffer);
   }
-  //     res.status(400).json({message: error.message});
 
-  //TODO move account
-  @Delete("/draft/:id")
+  @Put("/public/:id")
   @UseGuards(OwnerAccessGuard)
-  async deleteDraftOfferById(@Param("id") id: string) {
-    return await this.offerService.deleteDraftOfferById(id);
+  async updatePublicOfferByUserId(@Param("id") id: string, @Body() newOffer: DraftOfferDto) {
+    return await this.offerService.updatePublicOfferByUserId(newOffer);
   }
-  //     res.status(400).json({message: error.message});
 
-  @Put("")
-  @UseGuards(OwnerAccessGuard)
-  async updateOfferById(@Body() newOffer: DraftOfferDto) {
-    return await this.offerService.updateOfferById(newOffer);
+  @Put("/draft/:group_id")
+  @UseGuards(UserAccessGuard)
+  async updateDraftOfferByGroupId(@Param("group_id") group_id: string, @Body() newOffer: DraftOfferDto) {
+    return await this.offerService.updateDraftOfferByGroupId(newOffer);
   }
-  //     res.status(400).json({message: error.message});
 
-  @Post("/publicate")
-  @UseGuards(OwnerAccessGuard)
-  async publicateOffer(@Body() offerToPublicate: PublicOfferDto) {
-    return await this.offerService.publicateOffer(offerToPublicate);
+  @Put("/public/:group_id")
+  @UseGuards(UserAccessGuard)
+  async updatePublicOfferByGroupId(@Param("group_id") group_id: string, @Body() newOffer: DraftOfferDto) {
+    return await this.offerService.updatePublicOfferByGroupId(newOffer);
   }
-  //     res.status(400).json({message: error.message});
 }

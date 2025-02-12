@@ -13,14 +13,14 @@ const groupAccessSchema = new mongoose.Schema({
     ref: "User",
   },
   role: {
-    type: Number,
-    enum: Roles,
+    type: String,
+    enum: Object.keys(Roles),
     required: true,
   },
 });
 
 groupAccessSchema.index({ group_id: 1, user_id: 1 }, { unique: true });
+groupAccessSchema.index({ user_id: 1, role: 1 });
+groupAccessSchema.index({ group_id: 1 });
 
-const GroupAccessModel = mongoose.model("GroupAccess", groupAccessSchema);
-
-export default GroupAccessModel;
+export default groupAccessSchema;

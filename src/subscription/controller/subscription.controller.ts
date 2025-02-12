@@ -3,9 +3,9 @@ import { SubscriptionService } from "../service/subscription.service";
 import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
-import { PaymentSystems } from "../dto/payment-systems.enum";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { PaymentSystems } from "../../share/share.types";
 
 @Controller("subscription")
 export class SubscriptionController {
