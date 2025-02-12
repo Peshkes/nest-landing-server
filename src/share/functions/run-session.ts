@@ -14,7 +14,7 @@ export async function runSession<T>(
     return result;
   } catch (error) {
     await session.abortTransaction();
-    throw customError(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    throw customError(error.message, error.statusCode);
   } finally {
     await session.endSession();
   }

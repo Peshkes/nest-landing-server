@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { PaymentStatus } from "../dto/payment-status.enum";
+import { Payment, PaymentStatus } from "../subscription.types";
 
 // const payerSubSchema = new mongoose.Schema({
 //   _id: {
@@ -39,7 +39,7 @@ import { PaymentStatus } from "../dto/payment-status.enum";
 //   },
 // });
 
-const paymentsSchema = new mongoose.Schema(
+const paymentsSchema = new mongoose.Schema<Payment>(
   {
     _id: {
       type: String,
@@ -71,10 +71,7 @@ const paymentsSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    _id: true,
   },
 );
 
-const PaymentModel = mongoose.model("Payment", paymentsSchema);
-
-export default PaymentModel;
+export default paymentsSchema;

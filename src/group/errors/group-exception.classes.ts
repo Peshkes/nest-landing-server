@@ -10,8 +10,20 @@ export class GroupException {
     return new HttpException(GroupErrors.GET_GROUP + message, status);
   }
 
+  static GetGroupWithAdditionalDataException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(GroupErrors.GET_GROUP_WITH_ADDITIONAL_DATA + message, status);
+  }
+
   static GetGroupsPreviewsException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
     return new HttpException(GroupErrors.GET_GROUPS_PREVIEWS + message, status);
+  }
+
+  static GetGroupsWithPagination(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(GroupErrors.GET_GROUPS_PREVIEWS_WITH_PAGINATION + message, status);
+  }
+
+  static GetGroupMembersException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+    return new HttpException(GroupErrors.GET_GROUP_MEMBERS + message, status);
   }
 
   static StartAddingMemberException(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {

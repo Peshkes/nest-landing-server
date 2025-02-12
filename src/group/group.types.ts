@@ -1,16 +1,17 @@
+import { OfferPreview } from "../offer/offer.types";
+import { OfferManager } from "../share/interfaces/offer-manager";
+
 export type GroupAccess = {
   group_id: string;
   user_id: string;
-  role: Roles;
+  role: RoleName;
 };
 
-export type Group = {
+export interface Group extends OfferManager {
   _id?: string;
   name: string;
-  publicOffers: string[];
-  draftOffers: string[];
   settings: object;
-};
+}
 
 export type FullGroupData = {
   group: Group;
@@ -20,11 +21,39 @@ export type FullGroupData = {
 export type GroupPreview = {
   _id: string;
   name: string;
-  role: Roles;
+  role: RoleName;
 };
 
-export enum Roles {
-  USER = 10,
-  MODERATOR = 20,
-  ADMIN = 30,
-}
+export type GroupPreviewsPagination = {
+  data: GroupPreview[];
+  total: number;
+};
+
+export const Roles: Record<string, RoleInfo> = {
+  user: { weight: 10, name: "user" },
+  moderator: { weight: 20, name: "moderator" },
+  admin: { weight: 30, name: "admin" },
+} as const;
+
+export type GroupWithAdditionalData = {
+  _id: string;
+  name: string;
+  publicOffers: OfferPreview[];
+  draftOffers: OfferPreview[];
+  settings: object;
+  groupAccesses: GroupMemberPreview[];
+};
+
+export type GroupMemberPreview = {
+  accountId: string;
+  name: string;
+  role: RoleName;
+  email: string;
+};
+
+export type RoleName = keyof typeof Roles;
+
+export type RoleInfo = {
+  weight: number;
+  name: string;
+};

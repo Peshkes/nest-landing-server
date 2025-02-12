@@ -1,19 +1,32 @@
-export type AuthenticationData = {
+import { OfferManager } from "../share/interfaces/offer-manager";
+
+export interface AuthenticationData {
   email: string;
   password: string;
-};
+}
 
-export type UserData = AuthenticationData & {
+export interface UserData extends AuthenticationData {
   name: string;
-};
+}
 
-export type User = UserData & {
+export interface SuperUser extends UserData {
   _id: string;
-  lastPasswords: string[];
-  subscription: null;
-  publicOffers: string[];
-  draftOffers: string[];
-};
+  last_passwords: Array<string>;
+}
+
+export interface User extends OfferManager, SuperUser {
+  subscription?: string;
+  email_verified: boolean;
+  phone: string;
+  deleted: boolean;
+  deletion_date: Date;
+}
+
+export interface TokenData {
+  _id: string;
+  token: string;
+  createdAt: Date;
+}
 
 export type Tokens = {
   accessToken: string;
@@ -25,11 +38,7 @@ export type SignInResponse = {
   tokens: Tokens;
 };
 
-export type PublicUserData = {
-  email: string;
-  name: string;
-  _id: string;
-};
+export type PublicUserData = Pick<User, "_id" | "email" | "name" | "email_verified">;
 
 export type AuthenticationResult = {
   accessToken: string;

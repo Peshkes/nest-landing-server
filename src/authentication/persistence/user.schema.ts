@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { User } from "../authentication.types";
 
-const userSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema<User>(
   {
     _id: {
       type: String,
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    emailVerified: {
+    email_verified: {
       type: Boolean,
       required: true,
       default: false,
@@ -36,7 +37,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    lastPasswords: {
+    last_passwords: {
       type: [String],
       required: true,
       default: [],
@@ -71,5 +72,4 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-const UserModel = mongoose.model("User", userSchema);
-export default UserModel;
+export default userSchema;

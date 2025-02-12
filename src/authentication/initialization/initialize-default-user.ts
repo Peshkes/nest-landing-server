@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import SuperUserModel from "../persistence/super-user.model";
+import SuperUserModel from "../persistence/super-user.schema";
 
 export const createAdminUser = async () => {
   if (!(await SuperUserModel.exists({ name: "admin" }))) {

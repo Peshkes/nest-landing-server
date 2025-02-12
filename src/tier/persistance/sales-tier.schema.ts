@@ -34,6 +34,6 @@ const salesTierSchema = new mongoose.Schema({
   },
 });
 
-const SalesTierModel = mongoose.model("SalesTier", salesTierSchema);
+const SalesTierSchema = mongoose.model("SalesTier", salesTierSchema);
 
-export default SalesTierModel;
+export default SalesTierSchema;

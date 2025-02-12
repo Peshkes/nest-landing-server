@@ -1,195 +1,206 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import UserModel from "../persistence/user.model";
 import { User } from "../authentication.types";
-import { RuntimeException } from "@nestjs/core/errors/exceptions";
-import { ClientSession } from "mongoose";
-import { PasswordDto } from "../dto/password.dto";
-import bcrypt from "bcryptjs";
-import { EmailDto } from "../dto/email.dto";
-
-import crypto from "crypto";
-import ChangePasswordTokenModel from "../persistence/change-password-token.model";
+import { ClientSession, Model, Promise } from "mongoose";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { MailService } from "../../share/services/mailing.service";
-import { SubscriptionService } from "../../subscription/service/subscription.service";
-import { AuthException } from "../error/authentication-exception.class";
+import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
 import { runSession } from "../../share/functions/run-session";
-import SubscriptionModel from "../../subscription/persistanse/subscription.model";
-import { PaymentSystems } from "../../subscription/dto/payment-systems.enum";
+import { UserException } from "../error/user-exception.class";
+import { addOffersToUserQuery } from "../queries/add-offers-to-user.query";
+import { ManageOfferFunctions } from "../../share/functions/manage-offer-functions";
+import { OfferService } from "../../offer/service/offer.service";
+import { OfferManagerService } from "../../share/interfaces/offer-manager";
+import { InjectModel } from "@nestjs/mongoose";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { PaymentSystems } from "../../share/share.types";
 
 @Injectable()
-export class UserService {
+export class UserService implements OfferManagerService {
   constructor(
-    private readonly mailService: MailService,
-    private readonly subscriptionService: SubscriptionService,
+    @InjectModel("User") private readonly userModel: Model<User>,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly offerService: OfferService,
   ) {}
 
+  //USER METHODS
   async getAllUsers() {
     try {
-      const accounts: User[] = await UserModel.find();
-      return accounts.map((user) => ({
-        email: user.email,
-        name: user.name,
-        _id: user._id,
-        subscription: user.subscription,
-        publicOffers: user.publicOffers,
-        draftOffers: user.draftOffers,
-      }));
+      const accounts: User[] = await this.userModel.find();
+      return accounts;
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при получении списка аккаунтов: ${error.message}`);
+      throw UserException.GetAllUsersException(error.message, error.statusCode);
     }
   }
 
   async getUser(id: string) {
     try {
-      const account = await UserModel.findById(id);
-      if (!account) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      return { email: account.email, name: account.name, _id: account._id };
+      const user = await this.findUserById(id);
+      return { email: user.email, name: user.name, _id: user._id };
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при получении аккаунта: ${error.message}`);
+      throw UserException.GetUserException(error.message, error.statusCode);
     }
   }
 
   async userExistsById(id: string, session: ClientSession) {
-    return UserModel.exists({ id }).session(session);
+    return this.userModel.exists({ id }).session(session);
+  }
+
+  async getOffersByUserId(id: string, page: number, limit: number, roles: string[], statuses: string[]) {
+    try {
+      return getAllPaginatedOffersQuery(id, roles, statuses, page, limit);
+    } catch (error: any) {
+      throw UserException.GetOffersException(error.message, error.statusCode);
+    }
   }
 
   async removeUser(id: string) {
     try {
-      const account: User | null = await UserModel.findByIdAndDelete(id); //findOneAndDelete({ _id: id }).
+      const account: User | null = await this.userModel.findByIdAndDelete(id); //findOneAndDelete({ _id: id }).
       if (!account) throw new BadRequestException("Пользователь не найден");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {
-      throw new RuntimeException(`Ошибка при удалении аккаунта: ${error.message}`);
+      throw UserException.RemoveUserException(error.message, error.statusCode);
     }
-  }
-
-  async updatePassword(id: string, passwordDto: PasswordDto) {
-    try {
-      const account: User = await UserModel.findById(id);
-
-      if (!account) throw new BadRequestException("Пользователь не найден");
-
-      if (await bcrypt.compare(passwordDto.password, account.password))
-        throw new BadRequestException("Новый пароль не должен совпадать со старым");
-
-      const lastPasswords = account.lastPasswords;
-      for (const pass of account.lastPasswords) {
-        if (await bcrypt.compare(passwordDto.password, pass))
-          throw new BadRequestException("Этот пароль уже был использован. Пожайлуйста придумайте другой пароль");
-      }
-      lastPasswords.unshift(account.password);
-      if (lastPasswords.length > 3) lastPasswords.pop();
-
-      await UserModel.updateOne(
-        { account: account._id },
-        {
-          password: await bcrypt.hash(passwordDto.password, 10),
-          lastPasswords: lastPasswords,
-        },
-      );
-    } catch (error: any) {
-      throw new RuntimeException(`Ошибка при обновлении пароля: ${error.message}`);
-    }
-  }
-
-  async startResetPassword(email: EmailDto) {
-    try {
-      const existingUser = await UserModel.findOne(email);
-      if (!existingUser) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      const token = await ChangePasswordTokenModel.findOne({
-        userId: existingUser._id,
-      });
-      if (token) await token.deleteOne();
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      const hash = await bcrypt.hash(resetToken, 10);
-      await new ChangePasswordTokenModel({
-        userId: existingUser._id,
-        token: hash,
-        createdAt: Date.now(),
-      }).save();
-
-      await this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
-    } catch (error: any) {
-      throw new RuntimeException(`Ошибка при обновлении пароля: ${error.message}`);
-    }
-  }
-
-  private async sendResetPasswordEmail(email: string, userId: string, token: string) {
-    const link = `localhost:27000/account/reset_password/${userId}/${token}`;
-    await this.mailService.sendMailWithHtmlFromNoReply(
-      email,
-      "Запрос на сброс пароля",
-      `<b>Для сброса пароля пожалуйста пройдите по <a href="${link && link}">этой ссылке</a></b>`,
-    );
-  }
-
-  async finishResetPassword(id: string, token: string, passwordDto: PasswordDto) {
-    const passwordResetToken = await ChangePasswordTokenModel.findOne({
-      userId: id,
-    });
-    if (!passwordResetToken || !(await bcrypt.compare(token, passwordResetToken.token)))
-      throw new BadRequestException("Токен смены пароля некорректен или истек");
-    await this.updatePassword(id, passwordDto);
-    await ChangePasswordTokenModel.findByIdAndDelete(id);
   }
 
   async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
-    return this.runSubscriptionSession(async (session) => {
-      const account: User | null = await UserModel.findById(id);
-      if (!account) throw new BadRequestException("Пользователь не найден");
-      if (account && !account.subscription) {
-        console.log("subscription started in user");
-        await UserModel.updateOne(
-          { account: id },
-          {
-            subscription: await this.subscriptionService.createNewSubscription(id, tier_id, payment_system, session),
-          },
-        );
+    return this.runUserSession(async (session) => {
+      const user = await this.findUserById(id, session);
+      if (user && !user.subscription) {
+        await this.userModel
+          .updateOne(
+            { account: id },
+            {
+              subscription: await this.emitAddSubscription(id, tier_id, payment_system, session),
+            },
+          )
+          .session(session);
       }
-    }, AuthException.AddSubscriptionException);
+    }, UserException.AddSubscriptionException);
   }
 
-  async addOffersIdsToUser(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {}
-
-  async createDraftOffer(id: string, addOfferData: DraftOfferDto) {
-    return "";
+  //OFFER MANAGER METHODS
+  async createDraftOffer(id: string, addOfferData: DraftOfferDto): Promise<string> {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.createDraftOffer(this.offerService, this.userModel, id, addOfferData, session);
+    }, UserException.CreateDraftOfferException);
   }
 
   async publishOfferWithoutDraft(id: string, offer: DraftOfferDto) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.publishOfferWithoutDraft(this.offerService, this.userModel, id, offer, session);
+    }, UserException.PublishOfferException);
   }
 
   async publishDraftOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.publishDraftOffer(this.offerService, this.userModel, id, offer_id, session);
+    }, UserException.PublishDraftOfferException);
   }
 
   async unpublishPublicOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.unpublishPublicOffer(this.offerService, this.userModel, id, offer_id, session);
+    }, UserException.UnpublishOfferException);
   }
 
   async draftifyPublicOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.draftifyPublicOffer(this.offerService, this.userModel, id, offer_id, session);
+    }, UserException.DraftifyOfferException);
   }
 
   async duplicateDraftOffer(id: string, offer_id: string) {
-    return "";
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.duplicateDraftOffer(this.offerService, this.userModel, id, offer_id, session);
+    }, UserException.DuplicateDraftOfferException);
   }
 
   async removeOffer(id: string, offer_id: string) {
-    return undefined;
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.removeOfferFromEntity(this.offerService, this.userModel, id, offer_id, session);
+    }, UserException.RemoveOfferException);
   }
 
-  async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+  async copyToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.copyOffersToAnotherEntity(
+        this.offerService,
+        this.userModel,
+        id,
+        group_id,
+        moveOffersRequestDto,
+        this.emitAddOffersToGroupEvent,
+        session,
+      );
+    }, UserException.CopyToGroupException);
+  }
 
-  async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {}
+  async moveToGroup(id: string, group_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
+    return this.runUserSession(async (session) => {
+      return await ManageOfferFunctions.moveOffersToAnotherEntity(
+        this.userModel,
+        id,
+        group_id,
+        moveOffersRequestDto,
+        this.emitAddOffersToGroupEvent,
+        session,
+      );
+    }, UserException.MoveToGroupException);
+  }
 
-  //Utils
-  private async runSubscriptionSession(
+  async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession): Promise<void> {
+    await addOffersToUserQuery(user_id, moveOffersRequestDto, session);
+  }
+
+  //EMITTER PRODUCERS
+  private async emitAddOffersToGroupEvent(
+    group_id: string,
+    moveOffersRequestDto: MoveOffersRequestDto,
+    session: ClientSession,
+  ): Promise<void> {
+    return new Promise((resolve: () => void) => {
+      this.eventEmitter.emitAsync("group.add-offers-ids", group_id, moveOffersRequestDto, resolve, session);
+    });
+  }
+
+  private async emitAddSubscription(id: string, tier_id: string, payment_system: PaymentSystems, session: ClientSession): Promise<string> {
+    return new Promise((resolve: (subscription: string) => void) => {
+      this.eventEmitter.emitAsync(
+        "subscription.add-subscription",
+        id,
+        tier_id,
+        payment_system,
+        (subscription: string) => resolve(subscription),
+        session,
+      );
+    });
+  }
+
+  //EMITTER LISTENERS
+  @OnEvent("user.exists")
+  async handleUserExistsEvent(userId: string, callback: (result: boolean) => boolean, session: ClientSession): Promise<void> {
+    const exists = await this.userModel.exists({ _id: userId }).session(session);
+    callback(!!exists);
+  }
+
+  @OnEvent("user.add-offers-ids")
+  async handleAddOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, callback: () => void, session: ClientSession) {
+    await this.addOffersIds(user_id, moveOffersRequestDto, session);
+    callback();
+  }
+
+  //UTILITY METHODS
+  private async findUserById(id: string, session?: ClientSession) {
+    const user = await this.userModel.findById(id).session(session);
+    if (!user) throw new BadRequestException("Пользователь не найден");
+    return user;
+  }
+
+  private async runUserSession(
     callback: (session: ClientSession) => Promise<any>,
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
-    return await runSession(SubscriptionModel, callback, customError);
+    return await runSession(this.userModel, callback, customError);
   }
 }

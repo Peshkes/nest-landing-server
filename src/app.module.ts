@@ -3,6 +3,7 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/c
 import { AuthenticationModule } from "./authentication/authentication.module";
 import { GlobalExceptionFilter } from "./share/filtres/global-exception.filter";
 import { APP_FILTER } from "@nestjs/core";
+import { MongooseModule } from "@nestjs/mongoose";
 import { CsrfMiddleware } from "./share/middlewares/csrf.middleware";
 import { ConfigModule } from "@nestjs/config";
 import { JwtRequestMiddleware } from "./share/middlewares/jwt-request.middleware";
@@ -13,22 +14,32 @@ import { OfferModule } from "./offer/offer.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { TierModule } from "./tier/tier.module";
 import { RedisModule } from "./redis/redis.module";
-import { PaymentModule } from './payment/payment.module';
+import { EventEmitterModule } from "@nestjs/event-emitter";
+
+/*
+DESCRIPTION
+
+Main modules: Authentication, Group, Subscription
+Service modules: Share, Tier, Redis, Offer
+
+Connections:
+  Main <-> Main via emitter
+  Main -> Service via DI
+*/
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ".env",
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ".env" }),
+    MongooseModule.forRoot(process.env.MONGO_URL),
+    EventEmitterModule.forRoot(),
+
     AuthenticationModule,
+    SubscriptionModule,
     GroupModule,
     OfferModule,
     RedisModule,
-    SubscriptionModule,
     ShareModule,
     TierModule,
-    PaymentModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })

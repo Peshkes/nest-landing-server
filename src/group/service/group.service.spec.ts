@@ -3,14 +3,14 @@ import { GroupService } from "./group.service";
 import { MailService } from "../../share/services/mailing.service";
 import { OfferService } from "../../offer/service/offer.service";
 import { UserService } from "../../authentication/service/user.service";
-import GroupModel from "../persistanse/group.model";
-import GroupAccessModel from "../persistanse/group-access.model";
+import GroupModel from "../persistanse/group.schema";
+import GroupAccessModel from "../persistanse/group-access.schema";
 import AddUserToGroupTokenModel from "../persistanse/add-user-to-group-token.model";
 import { BadRequestException, HttpException } from "@nestjs/common";
 import { Roles } from "../group.types";
 
-jest.mock("../persistanse/group.model");
-jest.mock("../persistanse/group-access.model");
+jest.mock("../persistanse/group.schema");
+jest.mock("../persistanse/group-access.schema");
 jest.mock("../persistanse/add-user-to-group-token.model");
 
 describe("GroupService", () => {
