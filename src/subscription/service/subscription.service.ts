@@ -1,19 +1,17 @@
-import { BadRequestException, forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import SubscriptionSchema from "../persistanse/subscription.schema";
-import { SubscriptionDto } from "../../share/dto/subscription.dto";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
 import { PaymentDto } from "../dto/payment.dto";
 import { SubscriptionException } from "../errors/subscription-exception.classes";
 import { RedisService } from "../../redis/service/redis.service";
-import { Payment, PaymentCheckData, PaymentStatus, Subscription } from "../subscription.types";
+import { Payment, PaymentCheckData, PaymentStatus, Subscription, Statuses } from "../subscription.types";
 import { RefundDto } from "../dto/refund.dto";
-import PaymentModel from "../persistanse/payment.schema";
-import { ClientSession, Model } from "mongoose";
+import { ClientSession, Model, Promise } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { SubscriptionErrors } from "../errors/subscription-errors.class";
 import { TierServiceSales } from "../../tier/service/tier.service.sales";
 import { PaymentSystems, SalesTier } from "../../share/share.types";
 import { InjectModel } from "@nestjs/mongoose";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 
 @Injectable()
 export class SubscriptionService {
@@ -22,14 +20,15 @@ export class SubscriptionService {
     @InjectModel("Subscription") private readonly subscriptionModel: Model<Subscription>,
     private readonly redisService: RedisService,
     private readonly tierServiceSales: TierServiceSales,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createNewSubscription(user_id: string, tier_id: string, payment_system: PaymentSystems, session?: ClientSession): Promise<string> {
     try {
-      const { tier } = await this.checkIds(session, user_id, tier_id);
+      const tier = await this.getTier(tier_id, session);
       return await this.addSubscription(user_id, tier, payment_system, session);
     } catch (error: any) {
-      throw SubscriptionException.CreateNewSubscriptionException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw SubscriptionException.CreateNewSubscriptionException(error.message, error.statusCode);
     }
   }
 
@@ -42,9 +41,8 @@ export class SubscriptionService {
     const payment_id = await this.createPayment(tier.price, payment_system, session, tier.duration, key);
     subscription.payments_ids.push(payment_id);
     await subscription.save({ session });
-    await UserModel.findOneAndUpdate({ user_id }, { key }); //РАЗВЕ ОН НУЖЕН?
     this.initPayment(key, payment_id);
-    return key;
+    return subscription._id;
   }
 
   private async createPayment(sum: number, payment_system: PaymentSystems, session: ClientSession, duration: number, key: string) {
@@ -67,10 +65,8 @@ export class SubscriptionService {
       let storedPayment: PaymentCheckData = JSON.parse(await this.redisService.getValue(key));
       await this.redisService.extendTtL(key, 1800);
       if (!storedPayment) {
-        storedPayment = this.paymentModel.findById(receivedPaymentInfo.payment_id).select("-description -payment_details").lean();
-        storedPayment = await PaymentModel.findById(receivedPaymentInfo.payment_id).select("-description -payment_details").lean();
-        await this.redisService.setValue(key, 1800);
-        //TODO add to redis
+        storedPayment = await this.paymentModel.findById(receivedPaymentInfo.payment_id).select("-description -payment_details").lean();
+        await this.redisService.setValue(key, JSON.stringify(storedPayment), 1800);
       }
       if (receivedPaymentInfo.sum !== storedPayment.sum) this.cancelPayment(receivedPaymentInfo.payment_id);
       const receivedStatus = receivedPaymentInfo.status;
@@ -84,7 +80,6 @@ export class SubscriptionService {
         (receivedStatus === Statuses.success.name && Statuses[storedPayment.status].name === Statuses.failed.name)
       )
         this.confirmStatus(receivedPaymentInfo.payment_id);
-      //throw SubscriptionException.WrongPaymentException(key, HttpStatus.BAD_GATEWAY || HttpStatus.INTERNAL_SERVER_ERROR); //TODO решить как быть с ошибкой
       const duration: number = storedPayment.duration;
       const receivedDescription = receivedPaymentInfo.description;
       await this.subscriptionModel.findOneAndUpdate(
@@ -97,9 +92,8 @@ export class SubscriptionService {
         },
         { new: true, session },
       );
-      await this.paymentModel.findOneAndUpdate(
 
-      await PaymentModel.findOneAndUpdate(
+      await this.paymentModel.findOneAndUpdate(
         { _id: storedPayment._id },
         {
           status: receivedPaymentInfo.status,
@@ -109,18 +103,18 @@ export class SubscriptionService {
         },
         { new: true, session },
       );
-      //TODO if success
-      await SubscriptionModel.findOneAndUpdate(
-        { key },
-        {
-          is_active: true,
-          start_date: new Date(Date.now()),
-          expiration_date: duration && new Date(Date.now() + duration),
-          $push: { description: receivedDescription && "/n" + receivedDescription },
-        },
-        { new: true, session },
-      );
-      //await this.redisService.deleteValue(key);
+      if (receivedStatus === Statuses.success.name) {
+        await this.subscriptionModel.findOneAndUpdate(
+          { key },
+          {
+            is_active: true,
+            start_date: new Date(Date.now()),
+            expiration_date: duration && new Date(Date.now() + duration),
+            $push: { description: receivedDescription && "/n" + receivedDescription },
+          },
+          { new: true, session },
+        );
+      }
     }, SubscriptionException.ReceivePaymentInfoException);
   }
 
@@ -131,7 +125,8 @@ export class SubscriptionService {
     payment_system: PaymentSystems,
   ): Promise<string> {
     return this.runSubscriptionSession(async (session) => {
-      const { subscription, tier } = await this.checkIds(session, user_id, subscription_id, tier_id);
+      const tier = await this.getTier(tier_id, session);
+      const subscription = await this.getSubscription(subscription_id, session);
       const sum = tier.price;
       let key: string;
       if (subscription.tier_id !== tier_id) {
@@ -145,34 +140,9 @@ export class SubscriptionService {
     }, SubscriptionException.ProlongOrPromoteSubscriptionException);
   }
 
-  // async promoteSubscription(user_id: string, subscription_id: string, tier_id: string, payment_system: PaymentSystems) {
-  //   const { subscription, tier } = await this.checkIds(user_id, subscription_id, tier_id);
-  //   //const data: AlterSubscription = { user_id, key: subscription.key };
-  //   //private async createPayment(sum: number, payment_system: PaymentSystems, session: ClientSession, duration: number, key: string) {
-  //
-  //   const data: PaymentCheckData = {
-  //     payment_id: await this.createPayment(tier.price, payment_system, session, tier.duration),
-  //     sum,
-  //     duration
-  //   };
-  //   if (subscription.tier_id !== tier_id) {
-  //     data.tier_id = tier_id;
-  //     data.duration = tier.duration;
-  //   }
-  //   try {
-  //     await this.redisService.setValue(token, JSON.stringify(data), 86400 * 7);
-  //     this.initPayment(token);
-  //   } catch (error: any) {
-  //     throw SubscriptionException.ProlongOrPromoteSubscriptionException(
-  //       error.message,
-  //       error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR
-  //     );
-  //   }
-  // }
-
   async cancelSubscription(subscription_id: string) {
     return this.runSubscriptionSession(async (session) => {
-      const { subscription } = await this.checkIds(session, subscription_id);
+      const subscription = await this.getSubscription(subscription_id, session);
       this.initRefund(subscription.key);
     }, SubscriptionException.CancelSubscriptionException);
   }
@@ -188,24 +158,22 @@ export class SubscriptionService {
     try {
       const subscription = await this.subscriptionModel.findOne({ key });
       if (!subscription)
-        throw SubscriptionException.SubscriptionKeyNotFoundException(key, HttpStatus.BAD_REQUEST || HttpStatus.INTERNAL_SERVER_ERROR);
+        throw SubscriptionException.SubscriptionKeyNotFoundException(key, HttpStatus.BAD_REQUEST);
       subscription.is_active = false;
       const description = refund.description;
       if (description) subscription.description += "/n" + description;
       subscription.payments_ids.push(refund.payment_id);
       subscription.save();
     } catch (error: any) {
-      throw SubscriptionException.ReceiveRefundInfoException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw SubscriptionException.ReceiveRefundInfoException(error.message, error.statusCode);
     }
   }
 
-  async getSubscriptionById(id: string): Promise<SubscriptionDto> {
+  async getSubscriptionById(id: string): Promise<Subscription> {
     try {
-      const subscription: SubscriptionDto | null = await this.subscriptionModel.findById(id);
-      if (!subscription) throw new BadRequestException(SubscriptionErrors.SUBSCRIPTION_NOT_FOUND);
-      return subscription;
+      return this.getSubscription(id);
     } catch (error: any) {
-      throw SubscriptionException.SubscriptionReceivingException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw SubscriptionException.SubscriptionReceivingException(error.message, error.statusCode);
     }
   }
 
@@ -223,31 +191,22 @@ export class SubscriptionService {
       const subscription = await this.subscriptionModel.deleteOne({ _id: id, is_active: false });
       if (subscription.deletedCount === 0) throw new BadRequestException(SubscriptionErrors.SUBSCRIPTION_NOT_FOUND_OR_ACTIVE);
     } catch (error: any) {
-      throw SubscriptionException.SubscriptionDeletingException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw SubscriptionException.SubscriptionDeletingException(error.message, error.statusCode);
     }
   }
 
-  //Utils
-  private async checkIds(session?: ClientSession, user_id?: string, subscription_id?: string, tier_id?: string) {
-    try {
-      if (user_id && !(await this.userService.userExistsById(user_id, session)))
-        throw new BadRequestException(SubscriptionErrors.USER_NOT_FOUND);
-      let subscription;
-      if (subscription_id) {
-        subscription = await this.subscriptionModel.findById(subscription_id).session(session);
-        if (!subscription) throw new BadRequestException(SubscriptionErrors.SUBSCRIPTION_NOT_FOUND);
-      }
-      let tier: SalesTier;
-      if (tier_id) {
-        tier = await this.tierServiceSales.getSessionedSalesTierById(tier_id, session);
-        if (!tier || tier.expiration_date < new Date(Date.now()))
-          throw new BadRequestException(SubscriptionErrors.POST_SUBSCRIPTION_EXPIRED);
-      }
 
-      return { subscription, tier };
-    } catch (error: any) {
-      throw SubscriptionException.CheckIdsException(error.message, error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  //Utils
+  private async getTier(tier_id: string, session: ClientSession): Promise<SalesTier> {
+    const tier: SalesTier = await this.tierServiceSales.getSessionedSalesTierById(tier_id, session);
+    if (!tier || tier.expiration_date < new Date(Date.now())) throw new BadRequestException(SubscriptionErrors.POST_SUBSCRIPTION_EXPIRED);
+    return tier;
+  }
+
+  private async getSubscription(subscription_id: string, session?: ClientSession): Promise<Subscription> {
+    const subscription = await this.subscriptionModel.findById(subscription_id).session(session);
+    if (!subscription) throw new BadRequestException(SubscriptionErrors.SUBSCRIPTION_NOT_FOUND);
+    return subscription;
   }
 
   private async runSubscriptionSession(
@@ -255,5 +214,25 @@ export class SubscriptionService {
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
     return await runSession(this.subscriptionModel, callback, customError);
+  }
+
+  //Producers
+  private async userExistsById(userId: string, session: ClientSession): Promise<boolean> {
+    return new Promise((resolve: (result: boolean) => boolean) => {
+      this.eventEmitter.emitAsync("user.exists", userId, resolve, session);
+    });
+  }
+
+  //Listeners
+  @OnEvent("subscription.add-subscription")
+  async handleAddSubscriptionEvent(
+    user_id: string,
+    tier_id: string,
+    payment_system: PaymentSystems,
+    callback: (result: string) => string,
+    session: ClientSession,
+  ): Promise<void> {
+    const newSubscriptionId = await this.createNewSubscription(user_id, tier_id, payment_system, session);
+    callback(newSubscriptionId);
   }
 }

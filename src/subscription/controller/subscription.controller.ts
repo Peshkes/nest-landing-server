@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
 import { SubscriptionService } from "../service/subscription.service";
-import { SubscriptionDto } from "../../share/dto/subscription.dto";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
 import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
 import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
 import { PaymentSystems } from "../../share/share.types";
+import { Subscription } from "../subscription.types";
 
 @Controller("subscription")
 export class SubscriptionController {
@@ -19,7 +19,7 @@ export class SubscriptionController {
 
   @Get("/:id")
   @UseGuards(OwnerAccessGuard)
-  async getSubscriptionById(@Param("id") id: string): Promise<SubscriptionDto> {
+  async getSubscriptionById(@Param("id") id: string): Promise<Subscription> {
     return this.subscriptionService.getSubscriptionById(id);
   }
 
