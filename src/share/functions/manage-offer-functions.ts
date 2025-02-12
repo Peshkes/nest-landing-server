@@ -2,7 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { OfferService } from "../../offer/service/offer.service";
 import { DraftOfferDto } from "../dto/draft-offer.dto";
 import { ClientSession, Model } from "mongoose";
-import { OfferManager, OfferManagerService } from "../interfaces/offer-manager";
+import { OfferManager } from "../interfaces/offer-manager";
 import { MoveOffersRequestDto } from "../dto/move-offers-request.dto";
 
 export class ManageOfferFunctions {
@@ -98,7 +98,7 @@ export class ManageOfferFunctions {
     return { newPublicOfferIds, newDraftOfferIds };
   }
 
-  static async moveOffersToAnotherEntity<F extends OfferManager, T extends OfferManager>(
+  static async moveOffersToAnotherEntity<F extends OfferManager>(
     from_model: Model<F>,
     from_id: string,
     to_id: string,
