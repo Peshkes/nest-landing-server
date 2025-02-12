@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
 import { TierServiceSales } from "../service/tier.service.sales";
 import { SalesTier } from "../../share/share.types";
 

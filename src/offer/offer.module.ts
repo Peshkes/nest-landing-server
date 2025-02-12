@@ -4,6 +4,7 @@ import { OfferService } from "./service/offer.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import draftOfferSchema from "./persistance/draft-offer.schema";
 import publicOfferSchema from "./persistance/public-offer.schema";
+import { SecurityModule } from "../security/security.module";
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import publicOfferSchema from "./persistance/public-offer.schema";
       { name: "DraftOffer", schema: draftOfferSchema },
       { name: "PublicOffer", schema: publicOfferSchema },
     ]),
+    SecurityModule,
   ],
   controllers: [OfferController],
   providers: [OfferService],

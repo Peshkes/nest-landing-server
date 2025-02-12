@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { GroupService } from "../service/group.service";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
-import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../share/guards/group-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
+import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../security/guards/group-access.guard";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { AddGroupDto } from "../dto/add-group.dto";
 import { GroupMemberDto } from "../dto/group-member.dto";

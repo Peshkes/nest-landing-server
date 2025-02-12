@@ -2,7 +2,6 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
-import { createAdminUser } from "./authentication/initialization/initialize-default-user";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,8 +14,6 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.useLogger(new Logger());
-
-  await createAdminUser();
 
   app.useGlobalPipes(
     new ValidationPipe({

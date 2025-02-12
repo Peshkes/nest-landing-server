@@ -5,7 +5,6 @@ const salesTierSchema = new mongoose.Schema({
   _id: {
     type: String,
     default: uuidv4,
-    unique: true,
   },
   name: {
     type: String,
@@ -34,6 +33,4 @@ const salesTierSchema = new mongoose.Schema({
   },
 });
 
-const SalesTierSchema = mongoose.model("SalesTier", salesTierSchema);
-
-export default SalesTierSchema;
+export default salesTierSchema;

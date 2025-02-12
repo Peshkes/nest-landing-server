@@ -9,6 +9,8 @@ import userSchema from "./persistence/user.schema";
 import superUserSchema from "./persistence/super-user.schema";
 import verifyEmailTokenSchema from "./persistence/verify-email-token.schema";
 import changePasswordTokenSchema from "./persistence/change-password-token.schema";
+import { OfferModule } from "../offer/offer.module";
+import { SecurityModule } from "../security/security.module";
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import changePasswordTokenSchema from "./persistence/change-password-token.schem
       { name: "VerifyEmailToken", schema: verifyEmailTokenSchema },
       { name: "ChangePasswordToken", schema: changePasswordTokenSchema },
     ]),
+    SecurityModule,
     ShareModule,
+    OfferModule,
   ],
   controllers: [AuthenticationController, UserController],
   providers: [AuthenticationService, UserService],

@@ -2,8 +2,8 @@ import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nes
 import { SubscriptionService } from "../service/subscription.service";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
+import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
 import { PaymentSystems } from "../../share/share.types";
 import { Subscription } from "../subscription.types";
 

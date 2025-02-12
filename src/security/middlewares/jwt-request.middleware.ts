@@ -1,15 +1,19 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import UserModel from "../../authentication/persistence/user.schema";
-import { User } from "../../authentication/authentication.types";
-import { JwtService } from "../services/jwt.service";
-import { RequestWithUser } from "../interfaces/request-with-user.interface";
+import { SuperUser, User } from "../../authentication/authentication.types";
+import { JwtService } from "../../share/services/jwt.service";
+import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
 import chalk from "chalk";
-import SuperUserModel from "../../authentication/persistence/super-user.schema";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    @InjectModel("User") private readonly userModel: Model<User>,
+    @InjectModel("SuperUser") private readonly superUserModel: Model<SuperUser>,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
@@ -22,8 +26,8 @@ export class JwtRequestMiddleware implements NestMiddleware {
 
       const jwtDecoded = this.jwtService.verifyToken(accessToken);
       let user: User;
-      if (jwtDecoded.superAccess) user = await SuperUserModel.findById(jwtDecoded.userId);
-      else user = await UserModel.findById(jwtDecoded.userId);
+      if (jwtDecoded.superAccess) user = await this.superUserModel.findById(jwtDecoded.userId);
+      else user = await this.userModel.findById(jwtDecoded.userId);
 
       if (!user) {
         console.log(chalk.red(`[JWT Middleware] User not found for token in ${req.method} ${req.originalUrl}`));

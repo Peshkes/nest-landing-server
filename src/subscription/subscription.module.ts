@@ -6,6 +6,7 @@ import { TierModule } from "../tier/tier.module";
 import { MongooseModule } from "@nestjs/mongoose";
 import paymentsSchema from "./persistanse/payment.schema";
 import subscriptionSchema from "./persistanse/subscription.schema";
+import { SecurityModule } from "../security/security.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import subscriptionSchema from "./persistanse/subscription.schema";
       { name: "Payment", schema: paymentsSchema },
       { name: "Subscription", schema: subscriptionSchema },
     ]),
+    SecurityModule,
     RedisModule,
     TierModule,
   ],

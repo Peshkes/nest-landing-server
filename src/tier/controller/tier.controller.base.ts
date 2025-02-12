@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
 import { TierServiceBase } from "../service/tier.service.base";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
 import { BaseTierDto } from "../dto/tier.base.dto";
 
 @Controller("base_tier")

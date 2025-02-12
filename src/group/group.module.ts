@@ -7,6 +7,7 @@ import { RedisModule } from "../redis/redis.module";
 import { MongooseModule } from "@nestjs/mongoose";
 import groupSchema from "./persistanse/group.schema";
 import groupAccessSchema from "./persistanse/group-access.schema";
+import { SecurityModule } from "../security/security.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import groupAccessSchema from "./persistanse/group-access.schema";
       { name: "Group", schema: groupSchema },
       { name: "GroupAccess", schema: groupAccessSchema },
     ]),
+    SecurityModule,
     ShareModule,
     OfferModule,
     RedisModule,

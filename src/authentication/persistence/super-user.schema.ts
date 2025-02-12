@@ -7,7 +7,6 @@ const superUserSchema = new mongoose.Schema<SuperUser>(
     _id: {
       type: String,
       default: uuidv4,
-      unique: true,
     },
     name: {
       type: String,

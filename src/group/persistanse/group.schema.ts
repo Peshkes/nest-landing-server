@@ -6,7 +6,6 @@ const groupSchema = new mongoose.Schema<Group>({
   _id: {
     type: String,
     default: uuidv4,
-    unique: true,
   },
   name: {
     type: String,

@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { NextFunction, Request, Response } from "express";
-import { CsrfService } from "../services/csrf.service";
+import { CsrfService } from "../../share/services/csrf.service";
 import chalk from "chalk";
 
 @Injectable()

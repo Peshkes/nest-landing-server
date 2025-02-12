@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import SalesTierSchema from "../persistance/sales-tier.schema";
 import { SalesTierDto } from "../dto/tier.sales.dto";
 import { ClientSession, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
@@ -55,7 +54,7 @@ export class TierServiceSales {
 
   deleteSalesTierById = async (id: string): Promise<SalesTier> => {
     try {
-      const salesTier: SalesTier | null = await SalesTierSchema.findByIdAndDelete(id);
+      const salesTier: SalesTier | null = await this.salesTierModel.findByIdAndDelete(id);
       if (!salesTier) throw new Error("Тира с таким ID: " + id + " не найдено");
       return salesTier;
     } catch (error: any) {
@@ -66,7 +65,7 @@ export class TierServiceSales {
   async updateSalesTierById(id: string, newSalesTier: SalesTierDto) {
     try {
       const { name, duration, price, base_tier, sales_price, expiration_date } = newSalesTier;
-      const updatedTier = await SalesTierSchema.findByIdAndUpdate(
+      const updatedTier = await this.salesTierModel.findByIdAndUpdate(
         id,
         {
           name,

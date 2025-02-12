@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable, OnModuleInit } from "@nestjs/common";
 import { SignInDto } from "../dto/sign-in.dto";
 import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
@@ -15,7 +15,7 @@ import { MailService } from "../../share/services/mailing.service";
 import { runSession } from "../../share/functions/run-session";
 
 @Injectable()
-export class AuthenticationService {
+export class AuthenticationService implements OnModuleInit {
   constructor(
     @InjectModel("User") private readonly userModel: Model<User>,
     @InjectModel("SuperUser") private readonly superUserModel: Model<SuperUser>,
@@ -24,6 +24,10 @@ export class AuthenticationService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
   ) {}
+
+  async onModuleInit() {
+    await this.createAdminUser();
+  }
 
   async registration({ name, email, password, phone }: RegistrationDto) {
     await this.runUserSession(async (session) => {
@@ -219,5 +223,22 @@ export class AuthenticationService {
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
     return await runSession(this.userModel, callback, customError);
+  }
+
+  private async createAdminUser() {
+    if (!(await this.superUserModel.exists({ name: "admin" }))) {
+      const password = await bcrypt.hash("12345678Vv!", 10);
+      try {
+        await this.superUserModel.create({
+          name: "admin",
+          email: "admin@gmail.com",
+          password: password,
+          lastPasswords: [],
+        });
+        console.log("Админ успешно создан");
+      } catch (error: any) {
+        throw new Error(`Ошибка при создании пользователя: ${error.message}`);
+      }
+    }
   }
 }
