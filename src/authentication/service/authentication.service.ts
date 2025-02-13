@@ -4,7 +4,7 @@ import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import { JwtService } from "../../share/services/jwt.service";
 import { JwtTokenPayload } from "../../share/share.types";
-import { PublicUserData, SignInResponse } from "../authentication.types";
+import { PublicUserData, SignInResponse, User } from "../authentication.types";
 import { AuthException } from "../error/authentication-exception.class";
 import { InjectModel } from "@nestjs/mongoose";
 import { ClientSession, Model, Promise } from "mongoose";
@@ -13,18 +13,18 @@ import { EmailDto } from "../dto/email.dto";
 import crypto from "crypto";
 import { MailService } from "../../share/services/mailing.service";
 import { runSession } from "../../share/functions/run-session";
-import { VerifyEmailToken } from "../persistence/verify-email-token.schema";
-import { ChangePasswordToken } from "../persistence/change-password-token.schema";
-import { User } from "../persistence/user.schema";
-import { SuperUser } from "../persistence/super-user.schema";
+import { VerifyEmailTokenDocument } from "../persistence/verify-email-token.schema";
+import { ChangePasswordTokenDocument } from "../persistence/change-password-token.schema";
+import { UserDocument } from "../persistence/user.schema";
+import { SuperUserDocument } from "../persistence/super-user.schema";
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
-    @InjectModel(SuperUser.name) private readonly superUserModel: Model<SuperUser>,
-    @InjectModel(VerifyEmailToken.name) private readonly verifyEmailTokenModel: Model<VerifyEmailToken>,
-    @InjectModel(ChangePasswordToken.name) private readonly changePasswordTokenModel: Model<ChangePasswordToken>,
+    @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(SuperUserDocument.name) private readonly superUserModel: Model<SuperUserDocument>,
+    @InjectModel(VerifyEmailTokenDocument.name) private readonly verifyEmailTokenModel: Model<VerifyEmailTokenDocument>,
+    @InjectModel(ChangePasswordTokenDocument.name) private readonly changePasswordTokenModel: Model<ChangePasswordTokenDocument>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
   ) {}

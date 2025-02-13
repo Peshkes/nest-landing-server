@@ -3,14 +3,14 @@ import { OfferController } from "./controller/offer.controller";
 import { OfferService } from "./service/offer.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import { SecurityModule } from "../security/security.module";
-import { DraftOffer, DraftOfferSchema } from "./persistance/draft-offer.schema";
-import { PublicOffer, PublicOfferSchema } from "./persistance/public-offer.schema";
+import { DraftOfferDocument, DraftOfferSchema } from "./persistance/draft-offer.schema";
+import { PublicOfferDocument, PublicOfferSchema } from "./persistance/public-offer.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: DraftOffer.name, schema: DraftOfferSchema },
-      { name: PublicOffer.name, schema: PublicOfferSchema },
+      { name: DraftOfferDocument.name, schema: DraftOfferSchema },
+      { name: PublicOfferDocument.name, schema: PublicOfferSchema },
     ]),
     SecurityModule,
   ],

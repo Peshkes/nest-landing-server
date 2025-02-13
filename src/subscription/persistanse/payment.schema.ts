@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Mixed } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { PaymentStatus } from "../subscription.types";
+import { Payment, PaymentStatus } from "../subscription.types";
 
 // const payerSubSchema = new mongoose.Schema({
 //   _id: {
@@ -41,7 +41,7 @@ import { PaymentStatus } from "../subscription.types";
 // });
 
 @Schema({ timestamps: true })
-export class Payment extends Document {
+export class PaymentDocument extends Document implements Payment{
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 
@@ -61,4 +61,4 @@ export class Payment extends Document {
   payment_details?: Mixed;
 }
 
-export const PaymentSchema = SchemaFactory.createForClass(Payment);
+export const PaymentSchema = SchemaFactory.createForClass(PaymentDocument);

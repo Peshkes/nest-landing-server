@@ -12,14 +12,14 @@ import { TierServiceSales } from "../../tier/service/tier.service.sales";
 import { PaymentSystems, SalesTier } from "../../share/share.types";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import { Payment } from "../persistanse/payment.schema";
-import { Subscription } from "../persistanse/subscription.schema";
+import { PaymentDocument } from "../persistanse/payment.schema";
+import { SubscriptionDocument } from "../persistanse/subscription.schema";
 
 @Injectable()
 export class SubscriptionService {
   constructor(
-    @InjectModel(Payment.name) private readonly paymentModel: Model<Payment>,
-    @InjectModel(Subscription.name) private readonly subscriptionModel: Model<Subscription>,
+    @InjectModel(PaymentDocument.name) private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(SubscriptionDocument.name) private readonly subscriptionModel: Model<SubscriptionDocument>,
     private readonly redisService: RedisService,
     private readonly tierServiceSales: TierServiceSales,
     private readonly eventEmitter: EventEmitter2,
@@ -162,7 +162,7 @@ export class SubscriptionService {
     }
   }
 
-  async getSubscriptionById(id: string): Promise<Subscription> {
+  async getSubscriptionById(id: string) {
     try {
       return this.getSubscription(id);
     } catch (error: any) {
@@ -195,7 +195,7 @@ export class SubscriptionService {
     return tier;
   }
 
-  private async getSubscription(subscription_id: string, session?: ClientSession): Promise<Subscription> {
+  private async getSubscription(subscription_id: string, session?: ClientSession) {
     const subscription = await this.subscriptionModel.findById(subscription_id).session(session);
     if (!subscription) throw new BadRequestException(SubscriptionErrors.SUBSCRIPTION_NOT_FOUND);
     return subscription;

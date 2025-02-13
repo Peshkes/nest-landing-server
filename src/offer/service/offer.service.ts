@@ -3,14 +3,14 @@ import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { PublicOfferDto } from "../dto/public-offer.dto";
 import { ClientSession, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { PublicOffer } from "../persistance/public-offer.schema";
-import { DraftOffer } from "../persistance/draft-offer.schema";
+import { PublicOfferDocument } from "../persistance/public-offer.schema";
+import { DraftOfferDocument } from "../persistance/draft-offer.schema";
 
 @Injectable()
 export class OfferService {
   constructor(
-    @InjectModel(DraftOffer.name) private readonly draftOffer: Model<DraftOffer>,
-    @InjectModel(PublicOffer.name) private readonly publicOffer: Model<PublicOffer>,
+    @InjectModel(DraftOfferDocument.name) private readonly draftOffer: Model<DraftOfferDocument>,
+    @InjectModel(PublicOfferDocument.name) private readonly publicOffer: Model<PublicOfferDocument>,
   ) {}
 
   async getOfferByOfferId(id: string): Promise<DraftOfferDto> {

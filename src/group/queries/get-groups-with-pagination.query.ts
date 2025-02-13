@@ -1,12 +1,12 @@
 import { Model } from "mongoose";
-import { GroupAccess } from "../persistanse/group-access.schema";
+import { GroupAccessDocument } from "../persistanse/group-access.schema";
 
 export const getGroupsWithPaginationQuery = async (
   user_id: string,
   page: number,
   limit: number,
   roles: string[],
-  model: Model<GroupAccess>,
+  model: Model<GroupAccessDocument>,
 ) => {
   const skip = Math.max(0, page) * limit;
 

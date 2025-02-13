@@ -2,11 +2,12 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { BaseTierDto } from "../dto/tier.base.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { BaseTier } from "../persistance/base-tier.schema";
+import { BaseTierDocument } from "../persistance/base-tier.schema";
+import { BaseTier } from "../tier.types";
 
 @Injectable()
 export class TierServiceBase {
-  constructor(@InjectModel(BaseTier.name) private readonly baseTierModel: Model<BaseTier>) {}
+  constructor(@InjectModel(BaseTierDocument.name) private readonly baseTierModel: Model<BaseTierDocument>) {}
 
   addNewBaseTier = async (baseTier: BaseTierDto) => {
     try {
@@ -21,7 +22,7 @@ export class TierServiceBase {
     }
   };
 
-  getBaseTierById = async (id: string): Promise<BaseTier> => {
+  getBaseTierById = async (id: string)=> {
     try {
       const baseTier: BaseTier | null = await this.baseTierModel.findById(id);
       if (!baseTier) throw new Error("Тиры с таким ID: " + id + " не найдено");

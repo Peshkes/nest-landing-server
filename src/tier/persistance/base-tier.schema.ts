@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Mixed } from "mongoose";
+import { BaseTier } from "../tier.types";
 
 @Schema()
-export class BaseTier extends Document {
+export class BaseTierDocument extends Document implements BaseTier{
   @Prop({ type: String, required: true })
   name: string;
 
@@ -10,4 +11,4 @@ export class BaseTier extends Document {
   settings: Mixed;
 }
 
-export const BaseTierSchema = SchemaFactory.createForClass(BaseTier);
+export const BaseTierSchema = SchemaFactory.createForClass(BaseTierDocument);

@@ -1,13 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
-import { GroupAccess, RoleInfo, RoleName, Roles } from "../../group/group.types";
+import { RoleInfo, RoleName, Roles } from "../../group/group.types";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { GroupAccessDocument } from "../../group/persistanse/group-access.schema";
 
 export class GroupAccessGuard implements CanActivate {
   constructor(
     readonly minRole: RoleInfo,
-    readonly model: Model<GroupAccess>,
+    readonly model: Model<GroupAccessDocument>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -34,21 +35,21 @@ export class GroupAccessGuard implements CanActivate {
 
 @Injectable()
 export class UserAccessGuard extends GroupAccessGuard {
-  constructor(@InjectModel("GroupAccess") private readonly groupAccessModel: Model<GroupAccess>) {
+  constructor(@InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>) {
     super(Roles.user, groupAccessModel);
   }
 }
 
 @Injectable()
 export class ModeratorAccessGuard extends GroupAccessGuard {
-  constructor(@InjectModel("GroupAccess") private readonly groupAccessModel: Model<GroupAccess>) {
+  constructor(@InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>) {
     super(Roles.moderator, groupAccessModel);
   }
 }
 
 @Injectable()
 export class AdminAccessGuard extends GroupAccessGuard {
-  constructor(@InjectModel("GroupAccess") private readonly groupAccessModel: Model<GroupAccess>) {
+  constructor(@InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>) {
     super(Roles.admin, groupAccessModel);
   }
 }

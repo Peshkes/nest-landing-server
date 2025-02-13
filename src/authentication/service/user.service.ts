@@ -12,12 +12,13 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { PaymentSystems } from "../../share/share.types";
-import { User } from "../persistence/user.schema";
+import { UserDocument } from "../persistence/user.schema";
+import { User } from "../authentication.types";
 
 @Injectable()
 export class UserService implements OfferManagerService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
     private readonly eventEmitter: EventEmitter2,
     private readonly offerService: OfferService,
   ) {}
@@ -25,8 +26,7 @@ export class UserService implements OfferManagerService {
   //USER METHODS
   async getAllUsers() {
     try {
-      const accounts: User[] = await this.userModel.find();
-      return accounts;
+      return await this.userModel.find();
     } catch (error: any) {
       throw UserException.GetAllUsersException(error.message, error.statusCode);
     }
@@ -51,7 +51,7 @@ export class UserService implements OfferManagerService {
 
   async removeUser(id: string) {
     try {
-      const account: User | null = await this.userModel.findByIdAndDelete(id); //findOneAndDelete({ _id: id }).
+      const account: User | null = await this.userModel.findByIdAndDelete(id);
       if (!account) throw new BadRequestException("Пользователь не найден");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {

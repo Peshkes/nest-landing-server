@@ -1,14 +1,15 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { SalesTier } from "../../tier/persistance/sales-tier.schema";
+import { SalesTierDocument } from "../../tier/persistance/sales-tier.schema";
+import { Subscription } from "../subscription.types";
 
 @Schema({ timestamps: true })
-export class Subscription extends Document {
+export class SubscriptionDocument extends Document implements Subscription{
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 
-  @Prop({ type: String, required: true, ref: SalesTier.name })
+  @Prop({ type: String, required: true, ref: SalesTierDocument.name })
   tier_id: string;
 
   @Prop({ type: String, required: true })
@@ -30,4 +31,4 @@ export class Subscription extends Document {
   description?: string;
 }
 
-export const SubscriptionSchema = SchemaFactory.createForClass(Subscription);
+export const SubscriptionSchema = SchemaFactory.createForClass(SubscriptionDocument);

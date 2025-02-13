@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { UserDocument } from "../persistence/user.schema";
 
 export const getAllPaginatedOffersQuery = async (
   userId: string,
@@ -90,7 +91,7 @@ export const getAllPaginatedOffersQuery = async (
   pipeline.push({ $skip: page * limit }, { $limit: limit });
 
   return await mongoose.connection.db
-    .collection("users") // ✅ Запрос идет через коллекцию "users"
+    .collection(UserDocument.name) // ✅ Запрос идет через коллекцию "users"
     .aggregate(pipeline)
     .toArray();
 };

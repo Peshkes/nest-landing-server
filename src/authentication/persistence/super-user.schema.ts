@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { SuperUser } from "../authentication.types";
 
 @Schema({ timestamps: true })
-export class SuperUser extends Document {
+export class SuperUserDocument extends Document implements SuperUser{
   @Prop({ default: uuidv4 })
   _id: string;
 
@@ -20,4 +21,4 @@ export class SuperUser extends Document {
   last_passwords: string[];
 }
 
-export const SuperUserSchema = SchemaFactory.createForClass(SuperUser);
+export const SuperUserSchema = SchemaFactory.createForClass(SuperUserDocument);

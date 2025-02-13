@@ -5,14 +5,14 @@ import { TierServiceBase } from "./service/tier.service.base";
 import { TierServiceSales } from "./service/tier.service.sales";
 import { MongooseModule } from "@nestjs/mongoose";
 import { SecurityModule } from "../security/security.module";
-import { BaseTier, BaseTierSchema } from "./persistance/base-tier.schema";
-import { SalesTier, SalesTierSchema } from "./persistance/sales-tier.schema";
+import { BaseTierDocument, BaseTierSchema } from "./persistance/base-tier.schema";
+import { SalesTierDocument, SalesTierSchema } from "./persistance/sales-tier.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: BaseTier.name, schema: BaseTierSchema },
-      { name: SalesTier.name, schema: SalesTierSchema },
+      { name: BaseTierDocument.name, schema: BaseTierSchema },
+      { name: SalesTierDocument.name, schema: SalesTierSchema },
     ]),
     SecurityModule,
   ],

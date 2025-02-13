@@ -6,12 +6,14 @@ import { RequestWithUser } from "../../share/interfaces/request-with-user.interf
 import chalk from "chalk";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { UserDocument } from "../../authentication/persistence/user.schema";
+import { SuperUserDocument } from "../../authentication/persistence/super-user.schema";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {
   constructor(
-    @InjectModel("User") private readonly userModel: Model<User>,
-    @InjectModel("SuperUser") private readonly superUserModel: Model<SuperUser>,
+    @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(SuperUserDocument.name) private readonly superUserModel: Model<SuperUserDocument>,
     private readonly jwtService: JwtService,
   ) {}
 

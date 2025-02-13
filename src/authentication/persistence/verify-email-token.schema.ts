@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
-import { User } from "./user.schema";
+import { UserDocument } from "./user.schema";
+import { TokenData } from "../authentication.types";
 
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
-export class VerifyEmailToken extends Document {
-  @Prop({ required: true, ref: User.name })
+export class VerifyEmailTokenDocument extends Document implements TokenData{
+  @Prop({ required: true, ref: UserDocument.name })
   _id: string;
 
   @Prop({ required: true })
@@ -14,4 +15,4 @@ export class VerifyEmailToken extends Document {
   createdAt: Date;
 }
 
-export const VerifyEmailTokenSchema = SchemaFactory.createForClass(VerifyEmailToken);
+export const VerifyEmailTokenSchema = SchemaFactory.createForClass(VerifyEmailTokenDocument);

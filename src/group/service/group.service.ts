@@ -20,14 +20,14 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import { GroupAccess } from "../persistanse/group-access.schema";
-import { Group } from "../persistanse/group.schema";
+import { GroupAccessDocument } from "../persistanse/group-access.schema";
+import { GroupDocument } from "../persistanse/group.schema";
 
 @Injectable()
 export class GroupService implements OfferManagerService {
   constructor(
-    @InjectModel(Group.name) private readonly groupModel: Model<Group>,
-    @InjectModel(GroupAccess.name) private readonly groupAccessModel: Model<GroupAccess>,
+    @InjectModel(GroupDocument.name) private readonly groupModel: Model<GroupDocument>,
+    @InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>,
     private readonly eventEmitter: EventEmitter2,
     private readonly mailService: MailService,
     private readonly offerService: OfferService,
@@ -35,7 +35,7 @@ export class GroupService implements OfferManagerService {
   ) {}
 
   // GROUP METHODS
-  async getGroup(group_id: string): Promise<Group> {
+  async getGroup(group_id: string) {
     try {
       return await this.findGroupById(group_id);
     } catch (error: any) {
@@ -140,7 +140,7 @@ export class GroupService implements OfferManagerService {
     }
   }
 
-  async removeUserFromGroup(group_id: string, user_id: string): Promise<GroupAccess> {
+  async removeUserFromGroup(group_id: string, user_id: string) {
     try {
       const accessRecord = await this.groupAccessModel.findOne({ group_id, user_id });
       if (!accessRecord) throw new BadRequestException(`Пользователь с ID ${user_id} не состоит в группе с ID ${group_id}`);

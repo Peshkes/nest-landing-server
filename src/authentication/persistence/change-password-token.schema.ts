@@ -1,12 +1,11 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
-import { User } from "./user.schema";
+import { UserDocument } from "./user.schema";
+import { TokenData } from "../authentication.types";
 
-@Schema({
-  timestamps: { createdAt: true, updatedAt: false },
-})
-export class ChangePasswordToken extends Document {
-  @Prop({ required: true, ref: User.name })
+@Schema({ timestamps: { createdAt: true, updatedAt: false } })
+export class ChangePasswordTokenDocument extends Document implements TokenData{
+  @Prop({ required: true, ref: UserDocument.name })
   _id: string;
 
   @Prop({ required: true })
@@ -16,4 +15,4 @@ export class ChangePasswordToken extends Document {
   createdAt: Date;
 }
 
-export const ChangePasswordTokenSchema = SchemaFactory.createForClass(ChangePasswordToken);
+export const ChangePasswordTokenSchema = SchemaFactory.createForClass(ChangePasswordTokenDocument);

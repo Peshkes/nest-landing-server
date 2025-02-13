@@ -6,14 +6,14 @@ import { OfferModule } from "../offer/offer.module";
 import { RedisModule } from "../redis/redis.module";
 import { MongooseModule } from "@nestjs/mongoose";
 import { SecurityModule } from "../security/security.module";
-import { GroupAccess, GroupAccessSchema } from "./persistanse/group-access.schema";
-import { Group, GroupSchema } from "./persistanse/group.schema";
+import { GroupAccessDocument, GroupAccessSchema } from "./persistanse/group-access.schema";
+import { GroupDocument, GroupSchema } from "./persistanse/group.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Group.name, schema: GroupSchema },
-      { name: GroupAccess.name, schema: GroupAccessSchema },
+      { name: GroupDocument.name, schema: GroupSchema },
+      { name: GroupAccessDocument.name, schema: GroupAccessSchema },
     ]),
     SecurityModule,
     ShareModule,

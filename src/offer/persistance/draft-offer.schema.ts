@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Mixed } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { DraftOffer } from "../offer.types";
 
 @Schema({ timestamps: true })
-export class DraftOffer extends Document {
+export class DraftOfferDocument extends Document implements DraftOffer{
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 
@@ -14,4 +15,4 @@ export class DraftOffer extends Document {
   body: Mixed[];
 }
 
-export const DraftOfferSchema = SchemaFactory.createForClass(DraftOffer);
+export const DraftOfferSchema = SchemaFactory.createForClass(DraftOfferDocument);
