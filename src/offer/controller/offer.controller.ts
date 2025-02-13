@@ -7,10 +7,7 @@ import { UserAccessGuard } from "../../security/guards/group-access.guard";
 
 @Controller("offer")
 export class OfferController {
-  constructor(
-    private readonly offerService: OfferService
-
-  ) {}
+  constructor(private readonly offerService: OfferService) {}
 
   //SUPER USER
   @Get("/all_draft")

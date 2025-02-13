@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 import { SalesTier } from "../../tier/persistance/sales-tier.schema";
 
 @Schema({ timestamps: true })
@@ -24,7 +24,7 @@ export class Subscription extends Document {
   is_active: boolean;
 
   @Prop({ type: [String], default: [] })
-  payments_ids?: string[];
+  payments_ids: string[];
 
   @Prop({ type: String, required: false })
   description?: string;

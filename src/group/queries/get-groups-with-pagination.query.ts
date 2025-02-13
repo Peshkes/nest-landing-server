@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { GroupAccess } from "../group.types";
+import { GroupAccess } from "../persistanse/group-access.schema";
 
 export const getGroupsWithPaginationQuery = async (
   user_id: string,

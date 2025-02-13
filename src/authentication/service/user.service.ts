@@ -20,8 +20,7 @@ export class UserService implements OfferManagerService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly eventEmitter: EventEmitter2,
     private readonly offerService: OfferService,
-  ) {
-  }
+  ) {}
 
   //USER METHODS
   async getAllUsers() {
@@ -64,14 +63,15 @@ export class UserService implements OfferManagerService {
     return this.runUserSession(async (session) => {
       const exists = await this.userExists(id, session);
       if (!exists) throw new BadRequestException("Пользователя не существует");
-      await this.userModel.updateOne(
-        { id: id },
-        {
-          $push: {
-            subscriptions: await this.emitAddSubscription(id, tier_id, payment_system, session),
+      await this.userModel
+        .updateOne(
+          { id: id },
+          {
+            $push: {
+              subscriptions: await this.emitAddSubscription(id, tier_id, payment_system, session),
+            },
           },
-        }
-      )
+        )
         .session(session);
     }, UserException.AddSubscriptionException);
   }
@@ -193,8 +193,8 @@ export class UserService implements OfferManagerService {
     return user;
   }
 
-  private async userExists(id: string, session?: ClientSession){
-    return !!await this.userModel.exists({ _id: id }).session(session);
+  private async userExists(id: string, session?: ClientSession) {
+    return !!(await this.userModel.exists({ _id: id }).session(session));
   }
 
   private async runUserSession(

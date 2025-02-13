@@ -1,4 +1,5 @@
-import { GroupAccess, GroupPreview } from "../group.types";
+import { GroupPreview } from "../group.types";
+import { GroupAccess } from "../persistanse/group-access.schema";
 import { Model } from "mongoose";
 
 export const getGroupsPreviewsQuery = async (user_id: string, model: Model<GroupAccess>): Promise<GroupPreview[]> => {

@@ -37,7 +37,7 @@ export class GroupService implements OfferManagerService {
   // GROUP METHODS
   async getGroup(group_id: string): Promise<Group> {
     try {
-      return  await this.findGroupById(group_id);
+      return await this.findGroupById(group_id);
     } catch (error: any) {
       throw GroupException.GetGroupException(error.message, error.statusCode);
     }

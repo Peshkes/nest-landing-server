@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Roles } from "../group.types";
 import { Group } from "./group.schema";
 import { User } from "../../authentication/persistence/user.schema";
+import { Document } from "mongoose";
 
 @Schema({ timestamps: true })
 export class GroupAccess extends Document {

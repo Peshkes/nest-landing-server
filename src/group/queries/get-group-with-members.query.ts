@@ -1,5 +1,6 @@
-import { Group, GroupWithAdditionalData } from "../group.types";
+import { GroupWithAdditionalData } from "../group.types";
 import { Model } from "mongoose";
+import { Group } from "../persistanse/group.schema";
 
 export const getGroupWithMembersQuery = async (group_id: string, model: Model<Group>): Promise<GroupWithAdditionalData> => {
   const groupData = await model.aggregate([
