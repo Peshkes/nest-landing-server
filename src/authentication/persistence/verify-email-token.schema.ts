@@ -1,21 +1,17 @@
-import mongoose from "mongoose";
-import { TokenData } from "../authentication.types";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import { User } from "./user.schema";
 
-const verifyEmailTokenSchema = new mongoose.Schema<TokenData>({
-  _id: {
-    type: String,
-    required: true,
-    ref: "user",
-  },
-  token: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    expires: 3600,
-  },
-});
+@Schema({ timestamps: { createdAt: true, updatedAt: false } })
+export class VerifyEmailToken extends Document {
+  @Prop({ required: true, ref: User.name })
+  _id: string;
 
-export default verifyEmailTokenSchema;
+  @Prop({ required: true })
+  token: string;
+
+  @Prop({ default: Date.now, expires: 3600 })
+  createdAt: Date;
+}
+
+export const VerifyEmailTokenSchema = SchemaFactory.createForClass(VerifyEmailToken);

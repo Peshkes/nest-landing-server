@@ -4,15 +4,15 @@ import { SubscriptionService } from "./service/subscription.service";
 import { RedisModule } from "../redis/redis.module";
 import { TierModule } from "../tier/tier.module";
 import { MongooseModule } from "@nestjs/mongoose";
-import paymentsSchema from "./persistanse/payment.schema";
-import subscriptionSchema from "./persistanse/subscription.schema";
 import { SecurityModule } from "../security/security.module";
+import { Payment, PaymentSchema } from "./persistanse/payment.schema";
+import { Subscription, SubscriptionSchema } from "./persistanse/subscription.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: "Payment", schema: paymentsSchema },
-      { name: "Subscription", schema: subscriptionSchema },
+      { name: Payment.name, schema: PaymentSchema },
+      { name: Subscription.name, schema: SubscriptionSchema },
     ]),
     SecurityModule,
     RedisModule,

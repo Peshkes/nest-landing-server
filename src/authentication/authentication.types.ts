@@ -15,7 +15,7 @@ export interface SuperUser extends UserData {
 }
 
 export interface User extends OfferManager, SuperUser {
-  subscription?: string;
+  subscriptions: Array<string>;
   email_verified: boolean;
   phone: string;
   deleted: boolean;

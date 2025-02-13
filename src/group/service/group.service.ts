@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, Group, GroupAccess, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
+import { FullGroupData, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
@@ -20,12 +20,14 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { GroupAccess } from "../persistanse/group-access.schema";
+import { Group } from "../persistanse/group.schema";
 
 @Injectable()
 export class GroupService implements OfferManagerService {
   constructor(
-    @InjectModel("Group") private readonly groupModel: Model<Group>,
-    @InjectModel("GroupAccess") private readonly groupAccessModel: Model<GroupAccess>,
+    @InjectModel(Group.name) private readonly groupModel: Model<Group>,
+    @InjectModel(GroupAccess.name) private readonly groupAccessModel: Model<GroupAccess>,
     private readonly eventEmitter: EventEmitter2,
     private readonly mailService: MailService,
     private readonly offerService: OfferService,
@@ -35,14 +37,7 @@ export class GroupService implements OfferManagerService {
   // GROUP METHODS
   async getGroup(group_id: string): Promise<Group> {
     try {
-      const group = await this.findGroupById(group_id);
-      return {
-        _id: group._id,
-        name: group.name,
-        draft_offers: group.draft_offers,
-        public_offers: group.public_offers,
-        settings: group.settings,
-      };
+      return  await this.findGroupById(group_id);
     } catch (error: any) {
       throw GroupException.GetGroupException(error.message, error.statusCode);
     }

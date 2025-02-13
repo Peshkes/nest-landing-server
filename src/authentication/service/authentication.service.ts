@@ -4,7 +4,7 @@ import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import { JwtService } from "../../share/services/jwt.service";
 import { JwtTokenPayload } from "../../share/share.types";
-import { PublicUserData, SignInResponse, SuperUser, TokenData, User } from "../authentication.types";
+import { PublicUserData, SignInResponse } from "../authentication.types";
 import { AuthException } from "../error/authentication-exception.class";
 import { InjectModel } from "@nestjs/mongoose";
 import { ClientSession, Model, Promise } from "mongoose";
@@ -13,14 +13,18 @@ import { EmailDto } from "../dto/email.dto";
 import crypto from "crypto";
 import { MailService } from "../../share/services/mailing.service";
 import { runSession } from "../../share/functions/run-session";
+import { VerifyEmailToken } from "../persistence/verify-email-token.schema";
+import { ChangePasswordToken } from "../persistence/change-password-token.schema";
+import { User } from "../persistence/user.schema";
+import { SuperUser } from "../persistence/super-user.schema";
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
   constructor(
-    @InjectModel("User") private readonly userModel: Model<User>,
-    @InjectModel("SuperUser") private readonly superUserModel: Model<SuperUser>,
-    @InjectModel("VerifyEmailToken") private readonly verifyEmailTokenModel: Model<TokenData>,
-    @InjectModel("ChangePasswordToken") private readonly changePasswordTokenModel: Model<TokenData>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(SuperUser.name) private readonly superUserModel: Model<SuperUser>,
+    @InjectModel(VerifyEmailToken.name) private readonly verifyEmailTokenModel: Model<VerifyEmailToken>,
+    @InjectModel(ChangePasswordToken.name) private readonly changePasswordTokenModel: Model<ChangePasswordToken>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
   ) {}

@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
-import { Payment, PaymentStatus } from "../subscription.types";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Mixed } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { PaymentStatus } from "../subscription.types";
 
 // const payerSubSchema = new mongoose.Schema({
 //   _id: {
@@ -39,39 +40,25 @@ import { Payment, PaymentStatus } from "../subscription.types";
 //   },
 // });
 
-const paymentsSchema = new mongoose.Schema<Payment>(
-  {
-    _id: {
-      type: String,
-      default: uuidv4,
-    },
-    sum: {
-      type: Number,
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: Object.values(PaymentStatus),
-      required: true,
-    },
-    payment_system: {
-      type: String,
-      enum: Object.values(PaymentStatus),
-      required: true,
-    },
-    description: {
-      type: String,
-      required: false,
-    },
-    payment_details: {
-      type: Object,
-      required: false,
-      default: {},
-    },
-  },
-  {
-    timestamps: true,
-  },
-);
+@Schema({ timestamps: true })
+export class Payment extends Document {
+  @Prop({ type: String, default: uuidv4 })
+  _id: string;
 
-export default paymentsSchema;
+  @Prop({ type: Number, required: true })
+  sum: number;
+
+  @Prop({ type: String, enum: Object.values(PaymentStatus), required: true })
+  status: PaymentStatus;
+
+  @Prop({ type: String, enum: Object.values(PaymentStatus), required: true })
+  payment_system: PaymentStatus;
+
+  @Prop({ type: String, required: false })
+  description?: string;
+
+  @Prop({ type: Object, default: {} })
+  payment_details?: Mixed;
+}
+
+export const PaymentSchema = SchemaFactory.createForClass(Payment);

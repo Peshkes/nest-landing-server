@@ -2,11 +2,11 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { SalesTierDto } from "../dto/tier.sales.dto";
 import { ClientSession, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { SalesTier } from "../../share/share.types";
+import { SalesTier } from "../persistance/sales-tier.schema";
 
 @Injectable()
 export class TierServiceSales {
-  constructor(@InjectModel("SalesTier") private readonly salesTierModel: Model<SalesTier>) {}
+  constructor(@InjectModel(SalesTier.name) private readonly salesTierModel: Model<SalesTier>) {}
 
   addNewSalesTier = async (salesTier: SalesTierDto) => {
     try {

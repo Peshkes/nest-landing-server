@@ -1,36 +1,30 @@
-import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseTier } from "./base-tier.schema";
 
-const salesTierSchema = new mongoose.Schema({
-  _id: {
-    type: String,
-    default: uuidv4,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  duration: {
-    type: Number,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  base_tier: {
-    type: String,
-    required: true,
-    ref: "BaseTier",
-  },
-  sales_price: {
-    type: Number,
-    required: false,
-  },
-  expiration_date: {
-    type: Date,
-    required: false,
-  },
-});
+@Schema()
+export class SalesTier extends Document {
+  @Prop({ type: String, default: uuidv4 })
+  _id: string;
 
-export default salesTierSchema;
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  duration: number;
+
+  @Prop({ required: true })
+  price: number;
+
+  @Prop({ type: String, ref: BaseTier.name, required: true })
+  base_tier: string;
+
+  @Prop()
+  sales_price?: number;
+
+  @Prop()
+  expiration_date?: Date;
+}
+
+export const SalesTierSchema = SchemaFactory.createForClass(SalesTier);

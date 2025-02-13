@@ -1,6 +1,6 @@
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { ClientSession, Model } from "mongoose";
-import { User } from "../authentication.types";
+import { User } from "../persistence/user.schema";
 
 export async function addOffersToUserQuery(
   user_id: string,

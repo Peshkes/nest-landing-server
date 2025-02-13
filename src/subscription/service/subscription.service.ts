@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { PaymentDto } from "../dto/payment.dto";
 import { SubscriptionException } from "../errors/subscription-exception.classes";
 import { RedisService } from "../../redis/service/redis.service";
-import { Payment, PaymentCheckData, PaymentStatus, Subscription, Statuses } from "../subscription.types";
+import { PaymentCheckData, PaymentStatus, Statuses } from "../subscription.types";
 import { RefundDto } from "../dto/refund.dto";
 import { ClientSession, Model } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
@@ -12,12 +12,14 @@ import { TierServiceSales } from "../../tier/service/tier.service.sales";
 import { PaymentSystems, SalesTier } from "../../share/share.types";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { Payment } from "../persistanse/payment.schema";
+import { Subscription } from "../persistanse/subscription.schema";
 
 @Injectable()
 export class SubscriptionService {
   constructor(
-    @InjectModel("Payment") private readonly paymentModel: Model<Payment>,
-    @InjectModel("Subscription") private readonly subscriptionModel: Model<Subscription>,
+    @InjectModel(Payment.name) private readonly paymentModel: Model<Payment>,
+    @InjectModel(Subscription.name) private readonly subscriptionModel: Model<Subscription>,
     private readonly redisService: RedisService,
     private readonly tierServiceSales: TierServiceSales,
     private readonly eventEmitter: EventEmitter2,

@@ -1,32 +1,23 @@
-import mongoose from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Mixed } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { PublicOffer } from "../offer.types";
 
-const publicOfferSchema = new mongoose.Schema<PublicOffer>(
-  {
-    _id: {
-      type: String,
-      default: uuidv4,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    body: {
-      type: [mongoose.Schema.Types.Mixed],
-      required: true,
-    },
-    views: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    expiration_date: {
-      type: Date,
-      required: true,
-    },
-  },
-  { timestamps: true },
-);
+@Schema({ timestamps: true })
+export class PublicOffer extends Document {
+  @Prop({ type: String, default: uuidv4 })
+  _id: string;
 
-export default publicOfferSchema;
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true, type: [Object] })
+  body: Mixed[];
+
+  @Prop({ required: true, default: 0 })
+  views: number;
+
+  @Prop({ required: true })
+  expiration_date: Date;
+}
+
+export const PublicOfferSchema = SchemaFactory.createForClass(PublicOffer);

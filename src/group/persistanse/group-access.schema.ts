@@ -1,26 +1,22 @@
-import mongoose from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Roles } from "../group.types";
+import { Group } from "./group.schema";
+import { User } from "../../authentication/persistence/user.schema";
 
-const groupAccessSchema = new mongoose.Schema({
-  group_id: {
-    type: String,
-    required: true,
-    ref: "Group",
-  },
-  user_id: {
-    type: String,
-    required: true,
-    ref: "User",
-  },
-  role: {
-    type: String,
-    enum: Object.keys(Roles),
-    required: true,
-  },
-});
+@Schema({ timestamps: true })
+export class GroupAccess extends Document {
+  @Prop({ required: true, ref: Group.name })
+  group_id: string;
 
-groupAccessSchema.index({ group_id: 1, user_id: 1 }, { unique: true });
-groupAccessSchema.index({ user_id: 1, role: 1 });
-groupAccessSchema.index({ group_id: 1 });
+  @Prop({ required: true, ref: User.name })
+  user_id: string;
 
-export default groupAccessSchema;
+  @Prop({ required: true, enum: Object.keys(Roles) })
+  role: string;
+}
+
+export const GroupAccessSchema = SchemaFactory.createForClass(GroupAccess);
+
+GroupAccessSchema.index({ group_id: 1, user_id: 1 }, { unique: true });
+GroupAccessSchema.index({ user_id: 1, role: 1 });
+GroupAccessSchema.index({ group_id: 1 });
