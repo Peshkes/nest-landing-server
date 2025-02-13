@@ -5,20 +5,24 @@ import { UserController } from "./controller/user.controller";
 import { UserService } from "./service/user.service";
 import { ShareModule } from "../share/share.module";
 import { MongooseModule } from "@nestjs/mongoose";
-import userSchema from "./persistence/user.schema";
-import superUserSchema from "./persistence/super-user.schema";
-import verifyEmailTokenSchema from "./persistence/verify-email-token.schema";
-import changePasswordTokenSchema from "./persistence/change-password-token.schema";
+import { OfferModule } from "../offer/offer.module";
+import { SecurityModule } from "../security/security.module";
+import { UserDocument, UserSchema } from "./persistence/user.schema";
+import { SuperUserDocument, SuperUserSchema } from "./persistence/super-user.schema";
+import { VerifyEmailTokenDocument, VerifyEmailTokenSchema } from "./persistence/verify-email-token.schema";
+import { ChangePasswordTokenDocument, ChangePasswordTokenSchema } from "./persistence/change-password-token.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: "User", schema: userSchema },
-      { name: "SuperUser", schema: superUserSchema },
-      { name: "VerifyEmailToken", schema: verifyEmailTokenSchema },
-      { name: "ChangePasswordToken", schema: changePasswordTokenSchema },
+      { name: UserDocument.name, schema: UserSchema },
+      { name: SuperUserDocument.name, schema: SuperUserSchema },
+      { name: VerifyEmailTokenDocument.name, schema: VerifyEmailTokenSchema },
+      { name: ChangePasswordTokenDocument.name, schema: ChangePasswordTokenSchema },
     ]),
+    SecurityModule,
     ShareModule,
+    OfferModule,
   ],
   controllers: [AuthenticationController, UserController],
   providers: [AuthenticationService, UserService],

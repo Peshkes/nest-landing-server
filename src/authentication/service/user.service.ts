@@ -1,6 +1,5 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { User } from "../authentication.types";
-import { ClientSession, Model, Promise } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { getAllPaginatedOffersQuery } from "../queries/get-all-paginated-offers.query";
@@ -13,11 +12,13 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { PaymentSystems } from "../../share/share.types";
+import { UserDocument } from "../persistence/user.schema";
+import { User } from "../authentication.types";
 
 @Injectable()
 export class UserService implements OfferManagerService {
   constructor(
-    @InjectModel("User") private readonly userModel: Model<User>,
+    @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
     private readonly eventEmitter: EventEmitter2,
     private readonly offerService: OfferService,
   ) {}
@@ -25,8 +26,7 @@ export class UserService implements OfferManagerService {
   //USER METHODS
   async getAllUsers() {
     try {
-      const accounts: User[] = await this.userModel.find();
-      return accounts;
+      return await this.userModel.find();
     } catch (error: any) {
       throw UserException.GetAllUsersException(error.message, error.statusCode);
     }
@@ -41,10 +41,6 @@ export class UserService implements OfferManagerService {
     }
   }
 
-  async userExistsById(id: string, session: ClientSession) {
-    return this.userModel.exists({ id }).session(session);
-  }
-
   async getOffersByUserId(id: string, page: number, limit: number, roles: string[], statuses: string[]) {
     try {
       return getAllPaginatedOffersQuery(id, roles, statuses, page, limit);
@@ -55,7 +51,7 @@ export class UserService implements OfferManagerService {
 
   async removeUser(id: string) {
     try {
-      const account: User | null = await this.userModel.findByIdAndDelete(id); //findOneAndDelete({ _id: id }).
+      const account: User | null = await this.userModel.findByIdAndDelete(id);
       if (!account) throw new BadRequestException("Пользователь не найден");
       return { email: account.email, name: account.name, _id: account._id };
     } catch (error: any) {
@@ -65,17 +61,18 @@ export class UserService implements OfferManagerService {
 
   async addSubscription(id: string, tier_id: string, payment_system: PaymentSystems) {
     return this.runUserSession(async (session) => {
-      const user = await this.findUserById(id, session);
-      if (user && !user.subscription) {
-        await this.userModel
-          .updateOne(
-            { account: id },
-            {
-              subscription: await this.emitAddSubscription(id, tier_id, payment_system, session),
+      const exists = await this.userExists(id, session);
+      if (!exists) throw new BadRequestException("Пользователя не существует");
+      await this.userModel
+        .updateOne(
+          { id: id },
+          {
+            $push: {
+              subscriptions: await this.emitAddSubscription(id, tier_id, payment_system, session),
             },
-          )
-          .session(session);
-      }
+          },
+        )
+        .session(session);
     }, UserException.AddSubscriptionException);
   }
 
@@ -150,7 +147,7 @@ export class UserService implements OfferManagerService {
   }
 
   async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession): Promise<void> {
-    await addOffersToUserQuery(user_id, moveOffersRequestDto, session);
+    await addOffersToUserQuery(user_id, moveOffersRequestDto, this.userModel, session);
   }
 
   //EMITTER PRODUCERS
@@ -165,7 +162,7 @@ export class UserService implements OfferManagerService {
   }
 
   private async emitAddSubscription(id: string, tier_id: string, payment_system: PaymentSystems, session: ClientSession): Promise<string> {
-    return new Promise((resolve: (subscription: string) => void) => {
+    return new Promise((resolve) => {
       this.eventEmitter.emitAsync(
         "subscription.add-subscription",
         id,
@@ -180,8 +177,7 @@ export class UserService implements OfferManagerService {
   //EMITTER LISTENERS
   @OnEvent("user.exists")
   async handleUserExistsEvent(userId: string, callback: (result: boolean) => boolean, session: ClientSession): Promise<void> {
-    const exists = await this.userModel.exists({ _id: userId }).session(session);
-    callback(!!exists);
+    callback(await this.userExists(userId, session));
   }
 
   @OnEvent("user.add-offers-ids")
@@ -195,6 +191,10 @@ export class UserService implements OfferManagerService {
     const user = await this.userModel.findById(id).session(session);
     if (!user) throw new BadRequestException("Пользователь не найден");
     return user;
+  }
+
+  private async userExists(id: string, session?: ClientSession) {
+    return !!(await this.userModel.exists({ _id: id }).session(session));
   }
 
   private async runUserSession(

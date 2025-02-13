@@ -4,7 +4,7 @@ import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
 import { SignInDto } from "../dto/sign-in.dto";
 import { CsrfService } from "../../share/services/csrf.service";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
 import { PasswordDto } from "../dto/password.dto";
 import { EmailDto } from "../dto/email.dto";
 

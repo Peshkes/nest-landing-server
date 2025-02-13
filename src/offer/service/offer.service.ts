@@ -1,17 +1,16 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import DraftOfferSchema from "../persistance/draft-offer.schema";
-import PublicOfferSchema from "../persistance/public-offer.schema";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { PublicOfferDto } from "../dto/public-offer.dto";
 import { ClientSession, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { DraftOffer, PublicOffer } from "../offer.types";
+import { PublicOfferDocument } from "../persistance/public-offer.schema";
+import { DraftOfferDocument } from "../persistance/draft-offer.schema";
 
 @Injectable()
 export class OfferService {
   constructor(
-    @InjectModel("DraftOffer") private readonly draftOffer: Model<DraftOffer>,
-    @InjectModel("PublicOffer") private readonly publicOffer: Model<PublicOffer>,
+    @InjectModel(DraftOfferDocument.name) private readonly draftOffer: Model<DraftOfferDocument>,
+    @InjectModel(PublicOfferDocument.name) private readonly publicOffer: Model<PublicOfferDocument>,
   ) {}
 
   async getOfferByOfferId(id: string): Promise<DraftOfferDto> {

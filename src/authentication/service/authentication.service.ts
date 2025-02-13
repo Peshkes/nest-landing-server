@@ -1,10 +1,10 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable, OnModuleInit } from "@nestjs/common";
 import { SignInDto } from "../dto/sign-in.dto";
 import { RegistrationDto } from "../dto/registration.dto";
 import bcrypt from "bcryptjs";
 import { JwtService } from "../../share/services/jwt.service";
 import { JwtTokenPayload } from "../../share/share.types";
-import { PublicUserData, SignInResponse, SuperUser, TokenData, User } from "../authentication.types";
+import { PublicUserData, SignInResponse, User } from "../authentication.types";
 import { AuthException } from "../error/authentication-exception.class";
 import { InjectModel } from "@nestjs/mongoose";
 import { ClientSession, Model, Promise } from "mongoose";
@@ -13,17 +13,25 @@ import { EmailDto } from "../dto/email.dto";
 import crypto from "crypto";
 import { MailService } from "../../share/services/mailing.service";
 import { runSession } from "../../share/functions/run-session";
+import { VerifyEmailTokenDocument } from "../persistence/verify-email-token.schema";
+import { ChangePasswordTokenDocument } from "../persistence/change-password-token.schema";
+import { UserDocument } from "../persistence/user.schema";
+import { SuperUserDocument } from "../persistence/super-user.schema";
 
 @Injectable()
-export class AuthenticationService {
+export class AuthenticationService implements OnModuleInit {
   constructor(
-    @InjectModel("User") private readonly userModel: Model<User>,
-    @InjectModel("SuperUser") private readonly superUserModel: Model<SuperUser>,
-    @InjectModel("VerifyEmailToken") private readonly verifyEmailTokenModel: Model<TokenData>,
-    @InjectModel("ChangePasswordToken") private readonly changePasswordTokenModel: Model<TokenData>,
+    @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(SuperUserDocument.name) private readonly superUserModel: Model<SuperUserDocument>,
+    @InjectModel(VerifyEmailTokenDocument.name) private readonly verifyEmailTokenModel: Model<VerifyEmailTokenDocument>,
+    @InjectModel(ChangePasswordTokenDocument.name) private readonly changePasswordTokenModel: Model<ChangePasswordTokenDocument>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
   ) {}
+
+  async onModuleInit() {
+    await this.createAdminUser();
+  }
 
   async registration({ name, email, password, phone }: RegistrationDto) {
     await this.runUserSession(async (session) => {
@@ -61,8 +69,7 @@ export class AuthenticationService {
     try {
       if (!token) throw new BadRequestException("Токен не пришел ");
       const decodedToken: JwtTokenPayload = this.jwtService.verifyToken(token);
-      const user = await this.userModel.findById(decodedToken.userId);
-      if (!user) throw new BadRequestException("Пользователь не найден");
+      const user = await this.findUserById(decodedToken.userId);
       const tokens = this.jwtService.generateTokenPair(decodedToken.userId);
       return {
         user: this.createPublicUserData(user),
@@ -103,16 +110,13 @@ export class AuthenticationService {
     await this.runUserSession(async (session) => {
       const existingUser = await this.userModel.findOne(email).session(session);
       if (!existingUser) throw new BadRequestException("Пользователся с таким имейлом не найдено");
-      await this.changePasswordTokenModel.findByIdAndDelete(existingUser._id);
-
       const resetToken = crypto.randomBytes(32).toString("hex");
+      await this.changePasswordTokenModel.findByIdAndDelete(existingUser._id);
       const hash = await bcrypt.hash(resetToken, 10);
-      await new this.changePasswordTokenModel({
-        _id: existingUser._id,
-        token: hash,
-      }).save({ session });
 
-      await this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
+      const changePromise = new this.changePasswordTokenModel({ _id: existingUser._id, token: hash });
+      const sendResetPromise = this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
+      await Promise.all(sendResetPromise, changePromise.save({ session }));
     }, AuthException.StartResetPasswordException);
   }
 
@@ -171,12 +175,12 @@ export class AuthenticationService {
     const verifyDataExists = await this.verifyEmailTokenModel.exists({ _id: user._id }).session(session);
     if (!verifyDataExists) {
       const verifyToken = crypto.randomBytes(32).toString("hex");
-      await new this.verifyEmailTokenModel({
+      const mongoPromise = new this.verifyEmailTokenModel({
         _id: user._id,
         token: verifyToken,
       }).save({ session });
-
-      await this.sendVerifyEmailEmail(user.email, user._id, verifyToken);
+      const sendEmailPromise = this.sendVerifyEmailEmail(user.email, user._id, verifyToken);
+      await Promise.all([mongoPromise, sendEmailPromise]);
     }
   }
 
@@ -223,5 +227,22 @@ export class AuthenticationService {
     customError: (message: string, status?: HttpStatus) => HttpException,
   ) {
     return await runSession(this.userModel, callback, customError);
+  }
+
+  private async createAdminUser() {
+    if (!(await this.superUserModel.exists({ name: "admin" }))) {
+      const password = await bcrypt.hash("12345678Vv!", 10);
+      try {
+        await this.superUserModel.create({
+          name: "admin",
+          email: "admin@gmail.com",
+          password: password,
+          lastPasswords: [],
+        });
+        console.log("Админ успешно создан");
+      } catch (error: any) {
+        throw new Error(`Ошибка при создании пользователя: ${error.message}`);
+      }
+    }
   }
 }

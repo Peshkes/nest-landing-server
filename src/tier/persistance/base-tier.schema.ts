@@ -1,14 +1,14 @@
-import mongoose from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Mixed } from "mongoose";
+import { BaseTier } from "../tier.types";
 
-const baseTierSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  settings: {
-    type: JSON,
-    required: true,
-  },
-});
+@Schema()
+export class BaseTierDocument extends Document implements BaseTier{
+  @Prop({ type: String, required: true })
+  name: string;
 
-export default baseTierSchema;
+  @Prop({ type: Object, required: true })
+  settings: Mixed;
+}
+
+export const BaseTierSchema = SchemaFactory.createForClass(BaseTierDocument);

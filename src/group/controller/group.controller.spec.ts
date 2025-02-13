@@ -1,9 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GroupController } from "./group.controller";
 import { GroupService } from "../service/group.service";
-import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../share/guards/group-access.guard";
+import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../security/guards/group-access.guard";
 import { GroupMemberDto } from "../dto/group-member.dto";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
 import { AddGroupDto } from "../dto/add-group.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { FullGroupData, Group, GroupAccess, GroupPreview, Roles } from "../group.types";

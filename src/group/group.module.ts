@@ -5,15 +5,17 @@ import { ShareModule } from "../share/share.module";
 import { OfferModule } from "../offer/offer.module";
 import { RedisModule } from "../redis/redis.module";
 import { MongooseModule } from "@nestjs/mongoose";
-import groupSchema from "./persistanse/group.schema";
-import groupAccessSchema from "./persistanse/group-access.schema";
+import { SecurityModule } from "../security/security.module";
+import { GroupAccessDocument, GroupAccessSchema } from "./persistanse/group-access.schema";
+import { GroupDocument, GroupSchema } from "./persistanse/group.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: "Group", schema: groupSchema },
-      { name: "GroupAccess", schema: groupAccessSchema },
+      { name: GroupDocument.name, schema: GroupSchema },
+      { name: GroupAccessDocument.name, schema: GroupAccessSchema },
     ]),
+    SecurityModule,
     ShareModule,
     OfferModule,
     RedisModule,

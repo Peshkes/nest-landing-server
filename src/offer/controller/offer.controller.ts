@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { OfferService } from "../service/offer.service";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
+import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { UserAccessGuard } from "../../share/guards/group-access.guard";
+import { UserAccessGuard } from "../../security/guards/group-access.guard";
 
 @Controller("offer")
 export class OfferController {

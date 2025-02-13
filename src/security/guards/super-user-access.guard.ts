@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { RequestWithUser } from "../interfaces/request-with-user.interface";
+import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
 
 @Injectable()
 export class SuperUserAccessGuard implements CanActivate {

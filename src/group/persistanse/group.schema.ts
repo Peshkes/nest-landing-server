@@ -1,34 +1,26 @@
-import mongoose from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { Group } from "../group.types";
+import { PublicOfferDocument } from "../../offer/persistance/public-offer.schema";
+import { DraftOfferDocument } from "../../offer/persistance/draft-offer.schema";
+import {Group} from "../group.types";
 
-const groupSchema = new mongoose.Schema<Group>({
-  _id: {
-    type: String,
-    default: uuidv4,
-    unique: true,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  public_offers: {
-    type: [String],
-    required: true,
-    ref: "PublicOffer",
-    default: [],
-  },
-  draft_offers: {
-    type: [String],
-    required: true,
-    ref: "DraftOffer",
-    default: [],
-  },
-  settings: {
-    type: Object,
-    required: true,
-    default: {},
-  },
-});
+@Schema({ timestamps: true })
+export class GroupDocument extends Document implements Group{
+  @Prop({ type: String, default: uuidv4 })
+  _id: string;
 
-export default groupSchema;
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ type: [String], ref: PublicOfferDocument.name, default: [] })
+  public_offers: string[];
+
+  @Prop({ type: [String], ref: DraftOfferDocument.name, default: [] })
+  draft_offers: string[];
+
+  @Prop({ type: Object, required: true, default: {} })
+  settings: Record<string, unknown>;
+}
+
+export const GroupSchema = SchemaFactory.createForClass(GroupDocument);

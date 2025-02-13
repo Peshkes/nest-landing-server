@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, Group, GroupAccess, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
+import { FullGroupData, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
@@ -9,7 +9,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
-import { ClientSession, Model, Promise } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { RedisService } from "../../redis/service/redis.service";
 import { getGroupWithMembersQuery } from "../queries/get-group-with-members.query";
@@ -20,12 +20,14 @@ import { OfferManagerService } from "../../share/interfaces/offer-manager";
 import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { GroupAccessDocument } from "../persistanse/group-access.schema";
+import { GroupDocument } from "../persistanse/group.schema";
 
 @Injectable()
 export class GroupService implements OfferManagerService {
   constructor(
-    @InjectModel("Group") private readonly groupModel: Model<Group>,
-    @InjectModel("GroupAccess") private readonly groupAccessModel: Model<GroupAccess>,
+    @InjectModel(GroupDocument.name) private readonly groupModel: Model<GroupDocument>,
+    @InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>,
     private readonly eventEmitter: EventEmitter2,
     private readonly mailService: MailService,
     private readonly offerService: OfferService,
@@ -33,16 +35,9 @@ export class GroupService implements OfferManagerService {
   ) {}
 
   // GROUP METHODS
-  async getGroup(group_id: string): Promise<Group> {
+  async getGroup(group_id: string) {
     try {
-      const group = await this.findGroupById(group_id);
-      return {
-        _id: group._id,
-        name: group.name,
-        draft_offers: group.draft_offers,
-        public_offers: group.public_offers,
-        settings: group.settings,
-      };
+      return await this.findGroupById(group_id);
     } catch (error: any) {
       throw GroupException.GetGroupException(error.message, error.statusCode);
     }
@@ -50,7 +45,7 @@ export class GroupService implements OfferManagerService {
 
   async getGroupWithAdditionalData(group_id: string): Promise<GroupWithAdditionalData> {
     try {
-      const groupData = await getGroupWithMembersQuery(group_id);
+      const groupData = await getGroupWithMembersQuery(group_id, this.groupModel);
       if (!groupData) throw new BadRequestException("Группа не найдена");
 
       return groupData;
@@ -61,7 +56,7 @@ export class GroupService implements OfferManagerService {
 
   async getGroupsPreviews(user_id: string): Promise<GroupPreview[]> {
     try {
-      return await getGroupsPreviewsQuery(user_id);
+      return await getGroupsPreviewsQuery(user_id, this.groupAccessModel);
     } catch (error: any) {
       throw GroupException.GetGroupsPreviewsException(error.message, error.statusCode);
     }
@@ -74,7 +69,7 @@ export class GroupService implements OfferManagerService {
     roles: string[],
   ): Promise<{ data: GroupPreview[]; total: number }> {
     try {
-      return await getGroupsWithPaginationQuery(user_id, page, limit, roles);
+      return await getGroupsWithPaginationQuery(user_id, page, limit, roles, this.groupAccessModel);
     } catch (error) {
       throw GroupException.GetGroupsWithPagination(error.message, error.statusCode);
     }
@@ -133,20 +128,19 @@ export class GroupService implements OfferManagerService {
       const addRecord = JSON.parse(await this.redisService.getValue(token));
       if (!addRecord) throw new BadRequestException("Токен для добавления некорректен или истек");
 
-      await Promise.all([
-        new this.groupAccessModel({
-          group_id: addRecord.group_id,
-          user_id,
-          role: addRecord.role,
-        }).save(),
-        await this.redisService.deleteValue(token),
-      ]);
+      const mongoPromise = new this.groupAccessModel({
+        group_id: addRecord.group_id,
+        user_id,
+        role: addRecord.role,
+      }).save();
+      const redisPromise = this.redisService.deleteValue(token);
+      await Promise.all([mongoPromise, redisPromise]);
     } catch (error: any) {
       throw GroupException.FinishAddingMemberException(error.message, error.statusCode);
     }
   }
 
-  async removeUserFromGroup(group_id: string, user_id: string): Promise<GroupAccess> {
+  async removeUserFromGroup(group_id: string, user_id: string) {
     try {
       const accessRecord = await this.groupAccessModel.findOne({ group_id, user_id });
       if (!accessRecord) throw new BadRequestException(`Пользователь с ID ${user_id} не состоит в группе с ID ${group_id}`);
@@ -269,7 +263,7 @@ export class GroupService implements OfferManagerService {
   }
 
   async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
-    await addOffersToGroupQuery(user_id, moveOffersRequestDto, session);
+    await addOffersToGroupQuery(user_id, moveOffersRequestDto, this.groupModel, session);
   }
 
   //EMITTER PRODUCERS
@@ -278,7 +272,7 @@ export class GroupService implements OfferManagerService {
     moveOffersRequestDto: MoveOffersRequestDto,
     session: ClientSession,
   ): Promise<void> {
-    return new Promise((resolve: () => {}) => {
+    return new Promise((resolve) => {
       this.eventEmitter.emitAsync("user.add-offers-ids", user_id, moveOffersRequestDto, resolve, session);
     });
   }

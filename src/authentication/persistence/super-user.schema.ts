@@ -1,38 +1,24 @@
-import mongoose from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { SuperUser } from "../authentication.types";
 
-const superUserSchema = new mongoose.Schema<SuperUser>(
-  {
-    _id: {
-      type: String,
-      default: uuidv4,
-      unique: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    last_passwords: {
-      type: [String],
-      required: true,
-    },
-  },
-  {
-    timestamps: true,
-  },
-);
+@Schema({ timestamps: true })
+export class SuperUserDocument extends Document implements SuperUser{
+  @Prop({ default: uuidv4 })
+  _id: string;
 
-export default superUserSchema;
+  @Prop({ required: true, trim: true })
+  name: string;
+
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  email: string;
+
+  @Prop({ required: true })
+  password: string;
+
+  @Prop({ type: [String], required: true })
+  last_passwords: string[];
+}
+
+export const SuperUserSchema = SchemaFactory.createForClass(SuperUserDocument);

@@ -1,8 +1,9 @@
-import GroupModel from "../persistanse/group.schema";
 import { GroupWithAdditionalData } from "../group.types";
+import { Model } from "mongoose";
+import { GroupDocument } from "../persistanse/group.schema";
 
-export const getGroupWithMembersQuery = async (group_id: string): Promise<GroupWithAdditionalData> => {
-  const groupData = await GroupModel.aggregate([
+export const getGroupWithMembersQuery = async (group_id: string, model: Model<GroupDocument>): Promise<GroupWithAdditionalData> => {
+  const groupData = await model.aggregate([
     { $match: { _id: group_id } },
     {
       $lookup: {

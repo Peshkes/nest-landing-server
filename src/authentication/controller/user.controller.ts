@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { UserService } from "../service/user.service";
 import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
-import { SuperUserAccessGuard } from "../../share/guards/super-user-access.guard";
-import { OwnerAccessGuard } from "../../share/guards/owner-access.guard";
-import { UserAccessGuard } from "../../share/guards/group-access.guard";
+import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
+import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
+import { UserAccessGuard } from "../../security/guards/group-access.guard";
 import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
 import { GetOffersPaginatedDto } from "../dto/get-offers-paginated.dto";
 import { PaymentSystems } from "../../share/share.types";
