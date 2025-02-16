@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { PublicOffer } from "../offer.types";
 
 @Schema({ timestamps: true })
-export class PublicOfferDocument extends Document implements PublicOffer{
+export class PublicOfferDocument extends Document implements PublicOffer {
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 

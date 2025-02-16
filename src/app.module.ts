@@ -16,6 +16,7 @@ import { TierModule } from "./tier/tier.module";
 import { RedisModule } from "./redis/redis.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { SecurityModule } from "./security/security.module";
+import { NeuroModule } from "./neuro/neuro.module";
 
 /*
 DESCRIPTION
@@ -41,6 +42,7 @@ Connections:
     OfferModule,
     RedisModule,
     ShareModule,
+    NeuroModule,
     TierModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: GlobalExceptionFilter }],

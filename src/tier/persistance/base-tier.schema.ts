@@ -3,7 +3,7 @@ import { Document, Mixed } from "mongoose";
 import { BaseTier } from "../tier.types";
 
 @Schema()
-export class BaseTierDocument extends Document implements BaseTier{
+export class BaseTierDocument extends Document implements BaseTier {
   @Prop({ type: String, required: true })
   name: string;
 

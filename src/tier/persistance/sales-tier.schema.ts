@@ -5,7 +5,7 @@ import { BaseTierDocument } from "./base-tier.schema";
 import { SalesTier } from "../../share/share.types";
 
 @Schema()
-export class SalesTierDocument extends Document implements SalesTier{
+export class SalesTierDocument extends Document implements SalesTier {
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 

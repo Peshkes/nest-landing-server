@@ -41,7 +41,7 @@ import { Payment, PaymentStatus } from "../subscription.types";
 // });
 
 @Schema({ timestamps: true })
-export class PaymentDocument extends Document implements Payment{
+export class PaymentDocument extends Document implements Payment {
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 

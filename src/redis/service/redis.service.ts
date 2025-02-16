@@ -12,19 +12,20 @@ export class RedisService {
    * @param value Значение
    * @param ttl Время жизни в секундах (опционально, дефолтное значение 86400 (1 сутки))
    */
-  async setValue(key: string, value: string, ttl: number = 86400): Promise<void> {
-    await this.redisClient.set(key, value, "EX", ttl);
+  async setValue<T>(key: string, value: T, ttl: number = 86400): Promise<void> {
+    await this.redisClient.set(key, JSON.stringify(value), "EX", ttl);
   }
 
-  async getValue(key: string): Promise<string | null> {
-    return this.redisClient.get(key);
+  async getValue<R>(key: string): Promise<R> | null {
+    const string = await this.redisClient.get(key);
+    return JSON.parse(string) as R;
   }
 
   async deleteValue(key: string): Promise<void> {
     await this.redisClient.del(key);
   }
 
-  async extendTtL(key: string, ttl: number) {
+  async extendTtl(key: string, ttl: number) {
     await this.redisClient.expire(key, ttl);
   }
 }

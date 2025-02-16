@@ -11,7 +11,7 @@ import { SubscriptionErrors } from "../errors/subscription-errors.class";
 import { TierServiceSales } from "../../tier/service/tier.service.sales";
 import { PaymentSystems, SalesTier } from "../../share/share.types";
 import { InjectModel } from "@nestjs/mongoose";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { PaymentDocument } from "../persistanse/payment.schema";
 import { SubscriptionDocument } from "../persistanse/subscription.schema";
 
@@ -25,13 +25,11 @@ export class SubscriptionService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createNewSubscription(user_id: string, tier_id: string, payment_system: PaymentSystems, session?: ClientSession): Promise<string> {
-    try {
+  async createNewSubscription(user_id: string, tier_id: string, payment_system: PaymentSystems): Promise<string> {
+    return this.runSubscriptionSession(async (session) => {
       const tier = await this.getTier(tier_id, session);
       return await this.addSubscription(user_id, tier, payment_system, session);
-    } catch (error: any) {
-      throw SubscriptionException.CreateNewSubscriptionException(error.message, error.statusCode);
-    }
+    }, SubscriptionException.CreateNewSubscriptionException);
   }
 
   private async addSubscription(user_id: string, tier: SalesTier, payment_system: PaymentSystems, session: ClientSession): Promise<string> {
@@ -42,7 +40,8 @@ export class SubscriptionService {
     });
     const payment_id = await this.createPayment(tier.price, payment_system, session, tier.duration, key);
     subscription.payments_ids.push(payment_id);
-    await subscription.save({ session });
+    await Promise.all([subscription.save({ session }), this.addSubscriptionToUser(user_id, subscription._id, session)]);
+
     this.initPayment(key, payment_id);
     return subscription._id;
   }
@@ -66,7 +65,7 @@ export class SubscriptionService {
     return this.runSubscriptionSession(async (session) => {
       const key = receivedPaymentInfo.key;
       let storedPayment: PaymentCheckData = JSON.parse(await this.redisService.getValue(key));
-      await this.redisService.extendTtL(key, 1800);
+      await this.redisService.extendTtl(key, 1800);
       if (!storedPayment) {
         storedPayment = await this.paymentModel.findById(receivedPaymentInfo.payment_id).select("-description -payment_details").lean();
         await this.redisService.setValue(key, JSON.stringify(storedPayment), 1800);
@@ -215,16 +214,9 @@ export class SubscriptionService {
     });
   }
 
-  //Listeners
-  @OnEvent("subscription.add-subscription")
-  async handleAddSubscriptionEvent(
-    user_id: string,
-    tier_id: string,
-    payment_system: PaymentSystems,
-    callback: (result: string) => string,
-    session: ClientSession,
-  ): Promise<void> {
-    const newSubscriptionId = await this.createNewSubscription(user_id, tier_id, payment_system, session);
-    callback(newSubscriptionId);
+  private async addSubscriptionToUser(userId: string, subscriptionId: string, session: ClientSession): Promise<void> {
+    return new Promise((resolve) => {
+      this.eventEmitter.emitAsync("user.add-subscription", userId, subscriptionId, resolve, session);
+    });
   }
 }

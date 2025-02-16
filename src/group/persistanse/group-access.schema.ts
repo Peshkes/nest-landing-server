@@ -5,7 +5,7 @@ import { UserDocument } from "../../authentication/persistence/user.schema";
 import { Document } from "mongoose";
 
 @Schema({ timestamps: true })
-export class GroupAccessDocument extends Document implements GroupAccess{
+export class GroupAccessDocument extends Document implements GroupAccess {
   @Prop({ required: true, ref: GroupDocument.name })
   group_id: string;
 

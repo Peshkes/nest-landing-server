@@ -22,7 +22,7 @@ export class TierServiceBase {
     }
   };
 
-  getBaseTierById = async (id: string)=> {
+  getBaseTierById = async (id: string) => {
     try {
       const baseTier: BaseTier | null = await this.baseTierModel.findById(id);
       if (!baseTier) throw new Error("Тиры с таким ID: " + id + " не найдено");

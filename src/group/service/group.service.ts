@@ -1,13 +1,10 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
+import { FullGroupData, GroupAccess, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
-import { DraftOfferDto } from "../../share/dto/draft-offer.dto";
-import { MoveOffersRequestDto } from "../../share/dto/move-offers-request.dto";
 import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { OfferService } from "../../offer/service/offer.service";
 import { GroupException } from "../errors/group-exception.classes";
 import { ClientSession, Model } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
@@ -15,22 +12,18 @@ import { RedisService } from "../../redis/service/redis.service";
 import { getGroupWithMembersQuery } from "../queries/get-group-with-members.query";
 import { getGroupsPreviewsQuery } from "../queries/get-groups-previews.query";
 import { getGroupsWithPaginationQuery } from "../queries/get-groups-with-pagination.query";
-import { ManageOfferFunctions } from "../../share/functions/manage-offer-functions";
-import { OfferManagerService } from "../../share/interfaces/offer-manager";
-import { addOffersToGroupQuery } from "../queries/add-offers-to-group.query";
 import { InjectModel } from "@nestjs/mongoose";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { GroupAccessDocument } from "../persistanse/group-access.schema";
 import { GroupDocument } from "../persistanse/group.schema";
 
 @Injectable()
-export class GroupService implements OfferManagerService {
+export class GroupService {
   constructor(
     @InjectModel(GroupDocument.name) private readonly groupModel: Model<GroupDocument>,
     @InjectModel(GroupAccessDocument.name) private readonly groupAccessModel: Model<GroupAccessDocument>,
     private readonly eventEmitter: EventEmitter2,
     private readonly mailService: MailService,
-    private readonly offerService: OfferService,
     private readonly redisService: RedisService,
   ) {}
 
@@ -142,8 +135,7 @@ export class GroupService implements OfferManagerService {
 
   async removeUserFromGroup(group_id: string, user_id: string) {
     try {
-      const accessRecord = await this.groupAccessModel.findOne({ group_id, user_id });
-      if (!accessRecord) throw new BadRequestException(`Пользователь с ID ${user_id} не состоит в группе с ID ${group_id}`);
+      const accessRecord = await this.findGroupAccess(group_id, user_id);
       if (accessRecord.role === Roles.admin.name)
         throw new BadRequestException(`Невозможно удалить администратора группы с ID ${group_id}`);
 
@@ -162,10 +154,10 @@ export class GroupService implements OfferManagerService {
       ]);
 
       if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
-
       await Promise.all([
         this.groupAccessModel.deleteMany({ group_id }).session(session),
         this.groupModel.findByIdAndDelete(group_id).session(session),
+        this.emitRemoveAllOffers(group_id, session),
       ]);
 
       return {
@@ -184,7 +176,6 @@ export class GroupService implements OfferManagerService {
   async updateSettings(group_id: string, settings: object) {
     try {
       const updatedGroup = await this.groupModel.findByIdAndUpdate(group_id, { settings }, { new: true });
-
       if (!updatedGroup) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
       return updatedGroup.settings;
     } catch (error) {
@@ -192,96 +183,11 @@ export class GroupService implements OfferManagerService {
     }
   }
 
-  // OFFER MANAGER METHODS
-  async createDraftOffer(group_id: string, addOfferData: DraftOfferDto): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.createDraftOffer(this.offerService, this.groupModel, group_id, addOfferData, session);
-    }, GroupException.CreateDraftException);
-  }
-
-  async publishOfferWithoutDraft(group_id: string, offer: DraftOfferDto): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.publishOfferWithoutDraft(this.offerService, this.groupModel, group_id, offer, session);
-    }, GroupException.PublishOfferWithoutDraftException);
-  }
-
-  async publishDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.publishDraftOffer(this.offerService, this.groupModel, group_id, offer_id, session);
-    }, GroupException.PublishDraftException);
-  }
-
-  async copyOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto) {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.copyOffersToAnotherEntity(
-        this.offerService,
-        this.groupModel,
-        group_id,
-        user_id,
-        moveOffersRequestDto,
-        this.emitAddOffersToUserEvent,
-        session,
-      );
-    }, GroupException.CopyOfferToUserException);
-  }
-
-  async moveOffersToUser(group_id: string, user_id: string, moveOffersRequestDto: MoveOffersRequestDto): Promise<void> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.moveOffersToAnotherEntity(
-        this.groupModel,
-        group_id,
-        user_id,
-        moveOffersRequestDto,
-        this.emitAddOffersToUserEvent,
-        session,
-      );
-    }, GroupException.MoveOfferToUserException);
-  }
-
-  async unpublishPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.unpublishPublicOffer(this.offerService, this.groupModel, group_id, offer_id, session);
-    }, GroupException.UnpublishPublicException);
-  }
-
-  async draftifyPublicOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.draftifyPublicOffer(this.offerService, this.groupModel, group_id, offer_id, session);
-    }, GroupException.DraftifyPublicException);
-  }
-
-  async duplicateDraftOffer(group_id: string, offer_id: string): Promise<string> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.duplicateDraftOffer(this.offerService, this.groupModel, group_id, offer_id, session);
-    }, GroupException.DuplicateDraftException);
-  }
-
-  async removeOfferFromGroup(group_id: string, offer_id: string): Promise<DraftOfferDto> {
-    return this.runGroupSession(async (session) => {
-      return await ManageOfferFunctions.removeOfferFromEntity(this.offerService, this.groupModel, group_id, offer_id, session);
-    }, GroupException.DeleteDraftOfferException);
-  }
-
-  async addOffersIds(user_id: string, moveOffersRequestDto: MoveOffersRequestDto, session: ClientSession) {
-    await addOffersToGroupQuery(user_id, moveOffersRequestDto, this.groupModel, session);
-  }
-
-  //EMITTER PRODUCERS
-  private async emitAddOffersToUserEvent(
-    user_id: string,
-    moveOffersRequestDto: MoveOffersRequestDto,
-    session: ClientSession,
-  ): Promise<void> {
+  //EMITTER PRODUCER
+  private async emitRemoveAllOffers(id: string, session: ClientSession) {
     return new Promise((resolve) => {
-      this.eventEmitter.emitAsync("user.add-offers-ids", user_id, moveOffersRequestDto, resolve, session);
+      this.eventEmitter.emitAsync("offer.remove-all-by-owner-id", id, resolve, session);
     });
-  }
-
-  //EMITTER LISTENERS
-  @OnEvent("group.add-offers-ids")
-  async handleAddOffersIds(group_id: string, moveOffersRequestDto: MoveOffersRequestDto, callback: () => void, session: ClientSession) {
-    await this.addOffersIds(group_id, moveOffersRequestDto, session);
-    callback();
   }
 
   //UTILITY METHODS
@@ -296,5 +202,16 @@ export class GroupService implements OfferManagerService {
     const group = await this.groupModel.findById(group_id).session(session);
     if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
     return group;
+  }
+
+  private async findGroupAccess(group_id: string, user_id: string) {
+    const redisKey = `group-access:${group_id}:${user_id}`;
+    let accessRecord = await this.redisService.getValue<GroupAccess>(redisKey);
+    if (!accessRecord) {
+      accessRecord = await this.groupAccessModel.findOne({ group_id, user_id });
+      await this.redisService.setValue(redisKey, accessRecord, 300);
+    }
+    if (!accessRecord) throw new BadRequestException(`Пользователь с ID ${user_id} не состоит в группе с ID ${group_id}`);
+    return accessRecord;
   }
 }

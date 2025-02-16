@@ -25,8 +25,8 @@ export class AuthenticationController {
   }
 
   @Post("/registration")
-  registration(@Body() registrationDto: RegistrationDto) {
-    return this.authenticationService.registration(registrationDto);
+  async registration(@Body() registrationDto: RegistrationDto) {
+    return await this.authenticationService.registration(registrationDto);
   }
 
   @Post("/signin")

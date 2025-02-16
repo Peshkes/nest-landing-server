@@ -5,7 +5,7 @@ import { SalesTierDocument } from "../../tier/persistance/sales-tier.schema";
 import { Subscription } from "../subscription.types";
 
 @Schema({ timestamps: true })
-export class SubscriptionDocument extends Document implements Subscription{
+export class SubscriptionDocument extends Document implements Subscription {
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 

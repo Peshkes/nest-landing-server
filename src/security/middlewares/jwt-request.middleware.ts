@@ -8,6 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { UserDocument } from "../../authentication/persistence/user.schema";
 import { SuperUserDocument } from "../../authentication/persistence/super-user.schema";
+import { RedisService } from "../../redis/service/redis.service";
 
 @Injectable()
 export class JwtRequestMiddleware implements NestMiddleware {
@@ -15,6 +16,7 @@ export class JwtRequestMiddleware implements NestMiddleware {
     @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(SuperUserDocument.name) private readonly superUserModel: Model<SuperUserDocument>,
     private readonly jwtService: JwtService,
+    private readonly redisService: RedisService,
   ) {}
 
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
@@ -27,22 +29,35 @@ export class JwtRequestMiddleware implements NestMiddleware {
       }
 
       const jwtDecoded = this.jwtService.verifyToken(accessToken);
-      let user: User;
-      if (jwtDecoded.superAccess) user = await this.superUserModel.findById(jwtDecoded.userId);
-      else user = await this.userModel.findById(jwtDecoded.userId);
+      let user: User | SuperUser;
+      if (jwtDecoded.superAccess) {
+        const redisKey = `superuser:${jwtDecoded.userId}`;
+        user = await this.redisService.getValue<SuperUser>(redisKey);
+        if (!user) {
+          user = await this.superUserModel.findById(jwtDecoded.userId);
+          await this.redisService.setValue(redisKey, user, 300);
+        }
+      } else {
+        const redisKey = `user:${jwtDecoded.userId}`;
+        user = await this.redisService.getValue<User>(redisKey);
+        if (!user) {
+          user = await this.userModel.findById(jwtDecoded.userId);
+          await this.redisService.setValue(redisKey, user, 300);
+        }
+      }
 
       if (!user) {
         console.log(chalk.red(`[JWT Middleware] User not found for token in ${req.method} ${req.originalUrl}`));
         return res.status(404).json({ message: "Пользователь не найден" });
       } else {
         console.log(chalk.green(`[JWT Middleware] User authorized: ${user._id} for ${req.method} ${req.originalUrl}`));
-        req.user = user;
+        req.user_id = user._id;
         if (jwtDecoded.superAccess) req.superAccess = true;
         next();
       }
     } catch (error: any) {
       console.error(chalk.red(`[JWT Middleware] Error verifying token for ${req.method} ${req.originalUrl}: ${error.message}`));
-      return res.status(error.statusCode || 500).json({ message: `Ошибка при проверке доступа: ${error.message}` });
+      return res.status(error.statusCode || 401).json({ message: `Ошибка при проверке доступа: ${error.message}` });
     }
   }
 }

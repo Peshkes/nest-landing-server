@@ -6,6 +6,7 @@ import { Module } from "@nestjs/common";
 import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "./guards/group-access.guard";
 import { SuperUserAccessGuard } from "./guards/super-user-access.guard";
 import { OwnerAccessGuard } from "./guards/owner-access.guard";
+import { RedisModule } from "../redis/redis.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { OwnerAccessGuard } from "./guards/owner-access.guard";
       { name: SuperUserDocument.name, schema: SuperUserSchema },
       { name: GroupAccessDocument.name, schema: GroupAccessSchema },
     ]),
+    RedisModule,
   ],
   providers: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerAccessGuard],
   exports: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerAccessGuard, MongooseModule],

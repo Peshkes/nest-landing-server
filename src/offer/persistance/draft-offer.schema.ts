@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { DraftOffer } from "../offer.types";
 
 @Schema({ timestamps: true })
-export class DraftOfferDocument extends Document implements DraftOffer{
+export class DraftOfferDocument extends Document implements DraftOffer {
   @Prop({ type: String, default: uuidv4 })
   _id: string;
 

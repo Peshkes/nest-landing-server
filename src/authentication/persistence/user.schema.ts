@@ -7,7 +7,7 @@ import { DraftOfferDocument } from "../../offer/persistance/draft-offer.schema";
 import { User } from "../authentication.types";
 
 @Schema({ timestamps: { createdAt: true, updatedAt: true } })
-export class UserDocument extends Document implements User{
+export class UserDocument extends Document implements User {
   @Prop({ default: uuidv4 })
   _id: string;
 
