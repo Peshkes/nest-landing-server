@@ -7,7 +7,7 @@ import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "./guard
 import { SuperUserAccessGuard } from "./guards/super-user-access.guard";
 import { RedisModule } from "../redis/redis.module";
 import { OwnerOfferAccessGuard } from "./guards/owner-offer-access.guard";
-import { DraftOfferSchema, OfferDocument, OfferSchema, PublicOfferSchema } from "../offer/persistance/offer.schema";
+import { OfferDocument, OfferSchema } from "../offer/persistance/offer.schema";
 
 @Module({
   imports: [
@@ -15,17 +15,7 @@ import { DraftOfferSchema, OfferDocument, OfferSchema, PublicOfferSchema } from 
       { name: UserDocument.name, schema: UserSchema },
       { name: SuperUserDocument.name, schema: SuperUserSchema },
       { name: GroupAccessDocument.name, schema: GroupAccessSchema },
-    ]),
-    MongooseModule.forFeatureAsync([
-      {
-        name: OfferDocument.name,
-        useFactory: () => {
-          const schema = OfferSchema;
-          schema.discriminator("huy", DraftOfferSchema);
-          schema.discriminator("bighuy", PublicOfferSchema);
-          return schema;
-        },
-      },
+      { name: OfferDocument.name, schema: OfferSchema },
     ]),
     RedisModule,
   ],
