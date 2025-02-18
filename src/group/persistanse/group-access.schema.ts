@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { GroupAccess, Roles } from "../group.types";
+import { GroupAccess, RoleName, Roles } from "../group.types";
 import { GroupDocument } from "./group.schema";
 import { UserDocument } from "../../authentication/persistence/user.schema";
 import { Document } from "mongoose";
@@ -13,7 +13,7 @@ export class GroupAccessDocument extends Document implements GroupAccess {
   user_id: string;
 
   @Prop({ required: true, enum: Object.keys(Roles) })
-  role: string;
+  role: RoleName;
 }
 
 export const GroupAccessSchema = SchemaFactory.createForClass(GroupAccessDocument);

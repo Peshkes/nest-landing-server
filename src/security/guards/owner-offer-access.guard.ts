@@ -17,12 +17,10 @@ export class OwnerOfferAccessGuard implements CanActivate {
     if (request.superAccess) return true;
     const offer_id = request.params.offer_id;
     if (!offer_id || !request.user_id) return false;
-    let existingOffer: OfferDocument;
-    const existingOfferString = await this.redisService.getValue("offer:" + offer_id);
-    if (existingOfferString) existingOffer = JSON.parse(existingOfferString);
+    let existingOffer = await this.redisService.getValue<OfferDocument>("offer:" + offer_id);
     if (!existingOffer) existingOffer = await this.offerModel.findById(request.params.offer_id);
     if (!existingOffer) return false;
-    await this.redisService.setValue("offer:" + existingOffer._id, existingOfferString, 60);
+    await this.redisService.setValue("offer:" + existingOffer._id, existingOffer, 60);
     return existingOffer.owner_id === request.user_id;
   }
 }

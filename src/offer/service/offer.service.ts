@@ -86,7 +86,7 @@ export class OfferService {
     offerRoles?: OfferRole[],
     search?: string,
     sort?: SortType,
-  ): Promise<(DraftOfferDto | PublicOfferDto)[]> {
+  ): Promise<(DraftOffer | PublicOffer)[]> {
     return this.runOfferSession(async (session) => {
       const offset = pageNumber * pageSize;
 
@@ -97,7 +97,7 @@ export class OfferService {
 
       if (search) filter.name = { $regex: search, $options: "i" };
 
-      const offers: (DraftOfferDto | PublicOfferDto)[] = await model
+      const offers: (DraftOffer | PublicOffer)[] = await model
         .find(filter)
         .sort(sort ? sort : SortType.min)
         .skip(offset)

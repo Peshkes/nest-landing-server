@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
 import { GroupService } from "../service/group.service";
-import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
 import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "../../security/guards/group-access.guard";
 import { AddGroupDto } from "../dto/add-group.dto";
 import { GroupMemberDto } from "../dto/group-member.dto";
@@ -25,13 +24,11 @@ export class GroupController {
   }
 
   @Get("/all")
-  @UseGuards(OwnerAccessGuard)
   async getGroupsPreviews(@Req() request: RequestWithUser): Promise<GroupPreview[]> {
     return this.groupService.getGroupsPreviews(request.user_id);
   }
 
   @Get("/paginated")
-  @UseGuards(OwnerAccessGuard)
   async getPaginatedGroupsPreviews(
     @Req() request: RequestWithUser,
     @Query() query: GetGroupsPaginatedDto,
@@ -40,7 +37,6 @@ export class GroupController {
   }
 
   @Post("")
-  @UseGuards(OwnerAccessGuard)
   async createGroup(@Req() request: RequestWithUser, @Body() addGroupDto: AddGroupDto): Promise<string> {
     return this.groupService.createGroup(request.user_id, addGroupDto);
   }
@@ -52,7 +48,6 @@ export class GroupController {
   }
 
   @Post("/finish/:token")
-  @UseGuards(OwnerAccessGuard)
   async finishAddingMember(@Req() request: RequestWithUser, @Param("token") token: string): Promise<void> {
     await this.groupService.finishAddingMember(request.user_id, token);
   }

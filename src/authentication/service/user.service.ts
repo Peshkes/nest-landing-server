@@ -2,7 +2,6 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nes
 import { ClientSession, Model } from "mongoose";
 import { runSession } from "../../share/functions/run-session";
 import { UserException } from "../error/user-exception.class";
-import { OfferService } from "../../offer/service/offer.service";
 import { InjectModel } from "@nestjs/mongoose";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { UserDocument } from "../persistence/user.schema";
@@ -15,10 +14,8 @@ export class UserService {
   constructor(
     @InjectModel(UserDocument.name) private readonly userModel: Model<UserDocument>,
     private readonly eventEmitter: EventEmitter2,
-    private readonly offerService: OfferService,
     private readonly redisService: RedisService,
-  ) {
-  }
+  ) {}
 
   //USER METHODS
   async getAllUsers() {
@@ -63,7 +60,12 @@ export class UserService {
 
   //EMITTER LISTENERS
   @OnEvent("user.exists")
-  async handleUserExistsEvent(userId: string, resolve: (result: boolean) => boolean, reject: (message: string) => string, session: ClientSession): Promise<void> {
+  async handleUserExistsEvent(
+    userId: string,
+    resolve: (result: boolean) => boolean,
+    reject: (message: string) => string,
+    session: ClientSession,
+  ): Promise<void> {
     try {
       const res = await this.userExists(userId, session);
       resolve(res);
@@ -73,7 +75,13 @@ export class UserService {
   }
 
   @OnEvent("user.add-subscription")
-  async handleAddSubscriptionEvent(userId: string, subscriptionId: string, resolve: () => void, reject: (message: string) => string, session: ClientSession): Promise<void> {
+  async handleAddSubscriptionEvent(
+    userId: string,
+    subscriptionId: string,
+    resolve: () => void,
+    reject: (message: string) => string,
+    session: ClientSession,
+  ): Promise<void> {
     try {
       await this.addSubscription(userId, subscriptionId, session);
       resolve();

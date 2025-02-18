@@ -2,7 +2,6 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from 
 import { SubscriptionService } from "../service/subscription.service";
 import { PaymentDto } from "../dto/payment.dto";
 import { RefundDto } from "../dto/refund.dto";
-import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
 import { SuperUserAccessGuard } from "../../security/guards/super-user-access.guard";
 import { Subscription } from "../subscription.types";
 import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
@@ -44,13 +43,11 @@ export class SubscriptionController {
   }
 
   @Put("/cancel/:subscription_id")
-  @UseGuards(OwnerAccessGuard)
   async cancelSubscription(@Param("subscription_id") subscription_id: string) {
     await this.subscriptionService.cancelSubscription(subscription_id);
   }
 
   @Put("/prolong/:subscription_id")
-  @UseGuards(OwnerAccessGuard)
   async prolongOrPromoteSubscription(
     @Req() request: RequestWithUser,
     @Param("subscription_id") subscription_id: string,
