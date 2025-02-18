@@ -13,12 +13,6 @@ export class GroupDocument extends Document implements Group {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ type: [String], ref: PublicOfferDocument.name, default: [] })
-  public_offers: string[];
-
-  @Prop({ type: [String], ref: DraftOfferDocument.name, default: [] })
-  draft_offers: string[];
-
   @Prop({ type: Object, required: true, default: {} })
   settings: Record<string, unknown>;
 }

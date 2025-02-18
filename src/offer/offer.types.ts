@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import mongoose from "mongoose";
+import { RoleName, Roles } from "../group/group.types";
 
 export type OfferPreview = {
   _id: string;
@@ -26,3 +27,6 @@ export interface PublicOffer extends DraftOffer {
   expiration_date: Date;
   views: number;
 }
+
+export type ownerRole = "owner";
+export type roleFilter = RoleName | ownerRole;

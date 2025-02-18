@@ -1,5 +1,3 @@
-import { OfferManager } from "../share/interfaces/offer-manager";
-
 export interface AuthenticationData {
   email: string;
   password: string;
@@ -14,7 +12,7 @@ export interface SuperUser extends UserData {
   last_passwords: Array<string>;
 }
 
-export interface User extends OfferManager, SuperUser {
+export interface User extends SuperUser {
   subscriptions: Array<string>;
   email_verified: boolean;
   phone: string;

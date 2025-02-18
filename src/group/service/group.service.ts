@@ -1,6 +1,14 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { AddGroupDto } from "../dto/add-group.dto";
-import { FullGroupData, GroupAccess, GroupPreview, GroupWithAdditionalData, Roles } from "../group.types";
+import {
+  FullGroupData,
+  Group,
+  GroupAccess,
+  GroupPreview,
+  GroupWithAdditionalData,
+  RoleName,
+  Roles,
+} from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
@@ -13,9 +21,10 @@ import { getGroupWithMembersQuery } from "../queries/get-group-with-members.quer
 import { getGroupsPreviewsQuery } from "../queries/get-groups-previews.query";
 import { getGroupsWithPaginationQuery } from "../queries/get-groups-with-pagination.query";
 import { InjectModel } from "@nestjs/mongoose";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { GroupAccessDocument } from "../persistanse/group-access.schema";
 import { GroupDocument } from "../persistanse/group.schema";
+import { GroupErrors } from "../errors/group-errors.class";
 
 @Injectable()
 export class GroupService {
@@ -160,16 +169,7 @@ export class GroupService {
         this.emitRemoveAllOffers(group_id, session),
       ]);
 
-      return {
-        group: {
-          _id: group._id,
-          name: group.name,
-          draftOffers: group.draft_offers,
-          publicOffers: group.public_offers,
-          settings: group.settings,
-        },
-        groupAccesses,
-      };
+      return { group, groupAccesses, };
     }, GroupException.DeleteGroupException);
   }
 
@@ -185,9 +185,20 @@ export class GroupService {
 
   //EMITTER PRODUCER
   private async emitRemoveAllOffers(id: string, session: ClientSession) {
-    return new Promise((resolve) => {
-      this.eventEmitter.emitAsync("offer.remove-all-by-owner-id", id, resolve, session);
+    return new Promise((resolve, reject) => {
+      this.eventEmitter.emitAsync("offer.remove-all-by-owner-id", id, resolve, reject, session);
     });
+  }
+
+  //EMITTER LISTENERS
+  @OnEvent("group.get-ids-by-userid-and-filters")
+  async handleAddSubscriptionEvent(userId: string, filters: RoleName[], resolve: (ids: string[]) => void, reject: (message: string) => string, session: ClientSession): Promise<void> {
+    try {
+      const ids = await this.getGroupsIdsByUserId(userId, filters, session);
+      resolve(ids);
+    } catch (error){
+      reject(GroupErrors.GET_IDS_BY_USER_ID + error.message);
+    }
   }
 
   //UTILITY METHODS
@@ -198,8 +209,15 @@ export class GroupService {
     return await runSession(this.groupModel, callback, customError);
   }
 
+  private async getGroupsIdsByUserId(user_id: string, roles: RoleName[], session: ClientSession) {
+    const filter: Record<string, any> = { user_id };
+    if (roles.length > 0) filter.role = { $in: roles };
+    const groupAccesses: GroupAccess[] = await this.groupAccessModel.find(filter).session(session);
+    return groupAccesses ? groupAccesses.map(ga => ga.group_id) : [];
+  }
+
   private async findGroupById(group_id: string, session: ClientSession = undefined) {
-    const group = await this.groupModel.findById(group_id).session(session);
+    const group: Group = await this.groupModel.findById(group_id).session(session);
     if (!group) throw new BadRequestException(`Группа с ID ${group_id} не найдена`);
     return group;
   }

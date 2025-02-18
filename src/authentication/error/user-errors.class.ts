@@ -2,6 +2,7 @@ export class UserErrors {
   public static readonly GET_ALL_USERS = "Ошибка при получении всех пользователей: ";
   public static readonly GET_USER = "Ошибка при получении пользователя: ";
   public static readonly GET_OFFERS = "Ошибка при получении офферов пользователя: ";
+  public static readonly GET_USER_EXISTS = "Ошибка при проверке существования юзера: "
 
   public static readonly POST_CREATE_DRAFT_OFFER = "Ошибка при создании черновика оффера: ";
   public static readonly POST_PUBLISH_OFFER = "Ошибка при публикации оффера без черновика: ";

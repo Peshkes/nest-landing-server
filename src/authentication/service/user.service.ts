@@ -8,6 +8,7 @@ import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { UserDocument } from "../persistence/user.schema";
 import { User } from "../authentication.types";
 import { RedisService } from "../../redis/service/redis.service";
+import { UserErrors } from "../error/user-errors.class";
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,8 @@ export class UserService {
     private readonly eventEmitter: EventEmitter2,
     private readonly offerService: OfferService,
     private readonly redisService: RedisService,
-  ) {}
+  ) {
+  }
 
   //USER METHODS
   async getAllUsers() {
@@ -54,21 +56,30 @@ export class UserService {
 
   //EMITTER PRODUCERS
   private async emitRemoveAllOffers(id: string, session: ClientSession) {
-    return new Promise((resolve) => {
-      this.eventEmitter.emitAsync("offer.remove-all-by-owner-id", id, resolve, session);
+    return new Promise((resolve, reject) => {
+      this.eventEmitter.emitAsync("offer.remove-all-by-owner-id", id, resolve, reject, session);
     });
   }
 
   //EMITTER LISTENERS
   @OnEvent("user.exists")
-  async handleUserExistsEvent(userId: string, callback: (result: boolean) => boolean, session: ClientSession): Promise<void> {
-    callback(await this.userExists(userId, session));
+  async handleUserExistsEvent(userId: string, resolve: (result: boolean) => boolean, reject: (message: string) => string, session: ClientSession): Promise<void> {
+    try {
+      const res = await this.userExists(userId, session);
+      resolve(res);
+    } catch (error) {
+      reject(UserErrors.GET_USER_EXISTS + error.message);
+    }
   }
 
   @OnEvent("user.add-subscription")
-  async handleAddSubscriptionEvent(userId: string, subscriptionId: string, callback: () => void, session: ClientSession): Promise<void> {
-    await this.addSubscription(userId, subscriptionId, session);
-    callback();
+  async handleAddSubscriptionEvent(userId: string, subscriptionId: string, resolve: () => void, reject: (message: string) => string, session: ClientSession): Promise<void> {
+    try {
+      await this.addSubscription(userId, subscriptionId, session);
+      resolve();
+    } catch (error) {
+      reject(UserErrors.POST_ADD_SUBSCRIPTION + error.message);
+    }
   }
 
   //UTILITY METHODS
