@@ -1,12 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Req, Res } from "@nestjs/common";
 import { CookieOptions, Request, Response } from "express";
 import { AuthenticationService } from "../service/authentication.service";
 import { RegistrationDto } from "../dto/registration.dto";
 import { SignInDto } from "../dto/sign-in.dto";
 import { CsrfService } from "../../share/services/csrf.service";
-import { OwnerAccessGuard } from "../../security/guards/owner-access.guard";
 import { PasswordDto } from "../dto/password.dto";
 import { EmailDto } from "../dto/email.dto";
+import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
 
 @Controller("auth")
 export class AuthenticationController {
@@ -25,8 +25,8 @@ export class AuthenticationController {
   }
 
   @Post("/registration")
-  registration(@Body() registrationDto: RegistrationDto) {
-    return this.authenticationService.registration(registrationDto);
+  async registration(@Body() registrationDto: RegistrationDto) {
+    return await this.authenticationService.registration(registrationDto);
   }
 
   @Post("/signin")
@@ -68,10 +68,9 @@ export class AuthenticationController {
     return res.clearCookie("accessToken", { httpOnly: true }).clearCookie("refreshToken", { httpOnly: true });
   }
 
-  @Put("/:id")
-  @UseGuards(OwnerAccessGuard)
-  async updatePassword(@Param("id") id: string, @Body() passwordDto: PasswordDto) {
-    return await this.authenticationService.updatePassword(id, passwordDto);
+  @Put("")
+  async updatePassword(@Req() request: RequestWithUser, @Body() passwordDto: PasswordDto) {
+    return await this.authenticationService.updatePassword(request.user_id, passwordDto);
   }
 
   @Put("/reset")
@@ -79,19 +78,19 @@ export class AuthenticationController {
     return await this.authenticationService.startResetPassword(email);
   }
 
-  @Put("/reset/:id/:token")
-  async finishResetPassword(@Param("id") id: string, @Param("token") token: string, @Body() passwordDto: PasswordDto) {
-    return await this.authenticationService.finishResetPassword(id, token, passwordDto);
+  @Put("/reset/:token")
+  async finishResetPassword(@Req() request: RequestWithUser, @Param("token") token: string, @Body() passwordDto: PasswordDto) {
+    return await this.authenticationService.finishResetPassword(request.user_id, token, passwordDto);
   }
 
-  @Put("/verify/:id")
-  async startVerifyEmail(@Param("id") id: string) {
-    return await this.authenticationService.startVerifyEmail(id);
+  @Put("/verify")
+  async startVerifyEmail(@Req() request: RequestWithUser) {
+    return await this.authenticationService.startVerifyEmail(request.user_id);
   }
 
-  @Put("/verify/:id/:token")
-  async finishVerifyEmail(@Param("id") id: string, @Param("token") token: string) {
-    return await this.authenticationService.finishVerifyEmail(id, token);
+  @Put("/verify/:token")
+  async finishVerifyEmail(@Req() request: RequestWithUser, @Param("token") token: string) {
+    return await this.authenticationService.finishVerifyEmail(request.user_id, token);
   }
 
   createCookieOptions(maxAge: number): CookieOptions {

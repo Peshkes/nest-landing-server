@@ -5,12 +5,12 @@ import { UserController } from "./controller/user.controller";
 import { UserService } from "./service/user.service";
 import { ShareModule } from "../share/share.module";
 import { MongooseModule } from "@nestjs/mongoose";
-import { OfferModule } from "../offer/offer.module";
 import { SecurityModule } from "../security/security.module";
 import { UserDocument, UserSchema } from "./persistence/user.schema";
 import { SuperUserDocument, SuperUserSchema } from "./persistence/super-user.schema";
 import { VerifyEmailTokenDocument, VerifyEmailTokenSchema } from "./persistence/verify-email-token.schema";
 import { ChangePasswordTokenDocument, ChangePasswordTokenSchema } from "./persistence/change-password-token.schema";
+import { RedisModule } from "../redis/redis.module";
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { ChangePasswordTokenDocument, ChangePasswordTokenSchema } from "./persis
     ]),
     SecurityModule,
     ShareModule,
-    OfferModule,
+    RedisModule,
   ],
   controllers: [AuthenticationController, UserController],
   providers: [AuthenticationService, UserService],

@@ -7,7 +7,7 @@ import { JwtTokenPayload } from "../../share/share.types";
 import { PublicUserData, SignInResponse, User } from "../authentication.types";
 import { AuthException } from "../error/authentication-exception.class";
 import { InjectModel } from "@nestjs/mongoose";
-import { ClientSession, Model, Promise } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { PasswordDto } from "../dto/password.dto";
 import { EmailDto } from "../dto/email.dto";
 import crypto from "crypto";
@@ -17,6 +17,7 @@ import { VerifyEmailTokenDocument } from "../persistence/verify-email-token.sche
 import { ChangePasswordTokenDocument } from "../persistence/change-password-token.schema";
 import { UserDocument } from "../persistence/user.schema";
 import { SuperUserDocument } from "../persistence/super-user.schema";
+import { RedisService } from "../../redis/service/redis.service";
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
@@ -27,6 +28,7 @@ export class AuthenticationService implements OnModuleInit {
     @InjectModel(ChangePasswordTokenDocument.name) private readonly changePasswordTokenModel: Model<ChangePasswordTokenDocument>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly redisService: RedisService,
   ) {}
 
   async onModuleInit() {
@@ -34,7 +36,7 @@ export class AuthenticationService implements OnModuleInit {
   }
 
   async registration({ name, email, password, phone }: RegistrationDto) {
-    await this.runUserSession(async (session) => {
+    return await this.runUserSession(async (session) => {
       const existingUser = await this.userModel.findOne({ email }).session(session);
       if (existingUser) throw new BadRequestException("Email уже занят");
 
@@ -47,13 +49,13 @@ export class AuthenticationService implements OnModuleInit {
       }).save({ session });
 
       await this.processStartVerifyEmail(user, session);
-      return this.signin({ email, password });
+      return await this.signin({ email, password }, session);
     }, AuthException.RegistrationException);
   }
 
-  async signin(singInDto: SignInDto): Promise<SignInResponse> {
+  async signin(singInDto: SignInDto, session?: ClientSession): Promise<SignInResponse> {
     try {
-      const user = await this.userModel.findOne({ email: singInDto.email });
+      const user = await this.userModel.findOne({ email: singInDto.email }).session(session);
       if (!user) throw new BadRequestException("Пользователь с имейлом " + singInDto.email + " не найден");
       const tokens = await this.processSignin(user._id, singInDto.password, user.password);
       return {
@@ -116,7 +118,7 @@ export class AuthenticationService implements OnModuleInit {
 
       const changePromise = new this.changePasswordTokenModel({ _id: existingUser._id, token: hash });
       const sendResetPromise = this.sendResetPasswordEmail(email.email, existingUser._id.toString(), resetToken);
-      await Promise.all(sendResetPromise, changePromise.save({ session }));
+      await Promise.all([sendResetPromise, changePromise.save({ session })]);
     }, AuthException.StartResetPasswordException);
   }
 
@@ -213,8 +215,10 @@ export class AuthenticationService implements OnModuleInit {
   }
 
   private async findUserById(id: string, session?: ClientSession) {
-    const user = await this.userModel.findById(id).session(session);
+    let user = await this.redisService.getValue<User>(`user:${id}`);
+    if (!user) user = await this.userModel.findById(id).session(session);
     if (!user) throw new BadRequestException("Пользователь не найден");
+    else await this.redisService.setValue(`user:${user._id}`, user, 300);
     return user;
   }
 

@@ -5,6 +5,6 @@ import { RequestWithUser } from "../../share/interfaces/request-with-user.interf
 export class SuperUserAccessGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    return !!(request.user && request.superAccess);
+    return !!(request.user_id && request.superAccess);
   }
 }

@@ -34,30 +34,22 @@ export interface AbstractOffer {
   owner_id: string;
 }
 
-export interface DraftOffer extends AbstractOffer {
-  status: OfferStatus.draft;
-  published_id?: string;
-}
+export type DraftOffer = AbstractOffer & DraftOfferExtraFields;
 
-export interface PublicOffer extends AbstractOffer {
-  status: OfferStatus.published;
+export type DraftOfferExtraFields = {
+  // status: OfferStatus.draft;
+  published_id?: string;
+};
+
+export type PublicOfferExtraFields = {
   publication_date: Date;
   expiration_date: Date;
   views: number;
   draft_id?: string;
-}
+};
+
+export type PublicOffer = AbstractOffer & PublicOfferExtraFields;
 
 export type Offer = DraftOffer | PublicOffer;
-
-export interface DraftOffer1 {
-  _id: string;
-  name: string;
-  body: object;
-}
-
-export interface PublicOffer1 extends DraftOffer1 {
-  expiration_date: Date;
-  views: number;
-}
 
 export type OfferRole = RoleName | "owner";

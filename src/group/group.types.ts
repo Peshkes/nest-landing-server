@@ -1,5 +1,4 @@
 import { OfferPreview } from "../offer/offer.types";
-import { OfferManager } from "../share/interfaces/offer-manager";
 
 export type GroupAccess = {
   group_id: string;
@@ -7,7 +6,7 @@ export type GroupAccess = {
   role: RoleName;
 };
 
-export interface Group extends OfferManager {
+export interface Group {
   _id?: string;
   name: string;
   settings: object;

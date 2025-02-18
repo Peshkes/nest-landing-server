@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { SuperUser } from "../authentication.types";
 
 @Schema({ timestamps: true })
-export class SuperUserDocument extends Document implements SuperUser{
+export class SuperUserDocument extends Document implements SuperUser {
   @Prop({ default: uuidv4 })
   _id: string;
 

@@ -4,6 +4,7 @@ export class GroupErrors {
   public static readonly GET_GROUPS_PREVIEWS = "Ошибка при получении списка групп: ";
   public static readonly GET_GROUPS_PREVIEWS_WITH_PAGINATION = "Ошибка при получении списка групп с пагинацией: ";
   public static readonly GET_GROUP_MEMBERS = "Ошибка при получении участников группы: ";
+  public static readonly GET_IDS_BY_USER_ID: "Ошибка при получении id групп";
 
   public static readonly POST_CREATE_GROUP = "Ошибка при создании группы: ";
   public static readonly POST_START_ADDING_MEMBER = "Ошибка при создании запроса на добавление члена группы: ";

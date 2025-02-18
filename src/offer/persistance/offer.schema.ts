@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
-import { AbstractOffer, DraftOffer, OfferStatus, OwnerType, PublicOffer } from "../offer.types";
+import { AbstractOffer, DraftOfferExtraFields, OfferStatus, OwnerType, PublicOfferExtraFields } from "../offer.types";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -30,21 +30,16 @@ export class OfferDocument extends Document implements AbstractOffer {
 export const OfferSchema = SchemaFactory.createForClass(OfferDocument);
 
 @Schema()
-export class DraftOfferDocument extends OfferDocument implements DraftOffer {
-  @Prop({ required: true, enum: OfferStatus })
-  status: OfferStatus.draft;
-
+export class DraftOfferExtraDocument extends Document implements DraftOfferExtraFields {
   @Prop({ type: String, required: false })
   published_id?: string;
 }
 
-export const DraftOfferSchema = SchemaFactory.createForClass(DraftOfferDocument);
+export const DraftOfferSchema = SchemaFactory.createForClass(DraftOfferExtraDocument);
+export type DraftOfferDocument = DraftOfferExtraDocument & OfferDocument;
 
 @Schema()
-export class PublicOfferDocument extends OfferDocument implements PublicOffer {
-  @Prop({ required: true, enum: OfferStatus })
-  status: OfferStatus.published;
-
+export class PublicOfferExtraDocument extends Document implements PublicOfferExtraFields {
   @Prop({ type: Date, required: true })
   publication_date: Date;
 
@@ -58,4 +53,5 @@ export class PublicOfferDocument extends OfferDocument implements PublicOffer {
   draft_id?: string;
 }
 
-export const PublicOfferSchema = SchemaFactory.createForClass(PublicOfferDocument);
+export const PublicOfferSchema = SchemaFactory.createForClass(PublicOfferExtraDocument);
+export type PublicOfferDocument = PublicOfferExtraDocument & OfferDocument;

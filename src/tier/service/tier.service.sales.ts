@@ -25,7 +25,7 @@ export class TierServiceSales {
     }
   };
 
-  getSalesTierById = async (id: string)=> {
+  getSalesTierById = async (id: string) => {
     try {
       const salesTier: SalesTier | null = await this.salesTierModel.findById(id);
       if (!salesTier) throw new Error("Тиры с таким ID: " + id + " не найдено");
