@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import { SuperUser, User } from "../../authentication/authentication.types";
+import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../../share/services/jwt.service";
 import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
 import chalk from "chalk";
@@ -36,7 +36,7 @@ export class JwtRequestMiddleware implements NestMiddleware {
         return res.status(404).json({ message: "Пользователь не найден" });
       } else {
         console.log(chalk.green(`[JWT Middleware] User authorized: ${user._id} for ${req.method} ${req.originalUrl}`));
-        req.user = user;
+        req.user_id = user._id;
         if (jwtDecoded.superAccess) req.superAccess = true;
         next();
       }

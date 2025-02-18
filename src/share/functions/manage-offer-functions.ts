@@ -29,7 +29,7 @@ export class ManageOfferFunctions {
     const entity = await model.findById(id).session(session);
     if (!entity) throw new BadRequestException(`Сущность с ID ${id} не найдена`);
 
-    const publicOfferId = await offerService.publishOfferWithoutDraft(offer, session);
+    const publicOfferId = await offerService.publishOfferWithoutDraft(offer, 3456, session);
     entity.public_offers.push(publicOfferId);
 
     await entity.save({ session });
@@ -53,7 +53,7 @@ export class ManageOfferFunctions {
     );
 
     if (!result) throw new BadRequestException(`Сущность с ID ${id} не найдена`);
-    return await offerService.publishOfferFromDraft(offer_id, session);
+    return await offerService.publishOfferFromDraft(offer_id, 356, session);
   }
 
   static async copyOffersToAnotherEntity<T extends OfferManager>(
@@ -71,11 +71,11 @@ export class ManageOfferFunctions {
     const newPublicOfferIds: string[] = [];
     const newDraftOfferIds: string[] = [];
 
-    if (moveOffersRequestDto.publicOffersToMove?.length) {
-      const publicOffersToCopy = moveOffersRequestDto.publicOffersToMove.filter((offerId) => entity.public_offers.includes(offerId));
-      const newOfferIds = await offerService.duplicatePublicOffers(publicOffersToCopy, session);
-      newPublicOfferIds.push(...newOfferIds);
-    }
+    // if (moveOffersRequestDto.publicOffersToMove?.length) {
+    //   const publicOffersToCopy = moveOffersRequestDto.publicOffersToMove.filter((offerId) => entity.public_offers.includes(offerId));
+    //   const newOfferIds = await offerService.duplicatePublicOffers(publicOffersToCopy, 356, session);
+    //   newPublicOfferIds.push(...newOfferIds);
+    // }
 
     if (moveOffersRequestDto.draftOffersToMove?.length) {
       const draftOffersToCopy = moveOffersRequestDto.draftOffersToMove.filter((offerId) => entity.draft_offers.includes(offerId));
@@ -166,7 +166,7 @@ export class ManageOfferFunctions {
     offer_id: string,
     session: ClientSession,
   ): Promise<string> {
-    const draftOfferId = await offerService.draftifyPublicOffer(offer_id, session);
+    const draftOfferId = await offerService.copyPublishedToDrafts(offer_id, session);
     const updateResult = await model.findByIdAndUpdate(
       id,
       {

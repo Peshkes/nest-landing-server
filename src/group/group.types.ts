@@ -29,7 +29,7 @@ export type GroupPreviewsPagination = {
   total: number;
 };
 
-export const Roles: Record<string, RoleInfo> = {
+export const Roles: Record<RoleName, RoleInfo> = {
   user: { weight: 10, name: "user" },
   moderator: { weight: 20, name: "moderator" },
   admin: { weight: 30, name: "admin" },
@@ -51,7 +51,7 @@ export type GroupMemberPreview = {
   email: string;
 };
 
-export type RoleName = keyof typeof Roles;
+export type RoleName = "user" | "moderator" | "admin";
 
 export type RoleInfo = {
   weight: number;

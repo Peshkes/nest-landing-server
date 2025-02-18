@@ -5,7 +5,7 @@ import { GroupAccessDocument, GroupAccessSchema } from "../group/persistanse/gro
 import { Module } from "@nestjs/common";
 import { AdminAccessGuard, ModeratorAccessGuard, UserAccessGuard } from "./guards/group-access.guard";
 import { SuperUserAccessGuard } from "./guards/super-user-access.guard";
-import { OwnerAccessGuard } from "./guards/owner-access.guard";
+import { OwnerOfferAccessGuard } from "./guards/owner-offer-access.guard";
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { OwnerAccessGuard } from "./guards/owner-access.guard";
       { name: GroupAccessDocument.name, schema: GroupAccessSchema },
     ]),
   ],
-  providers: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerAccessGuard],
-  exports: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerAccessGuard, MongooseModule],
+  providers: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerOfferAccessGuard],
+  exports: [UserAccessGuard, ModeratorAccessGuard, AdminAccessGuard, SuperUserAccessGuard, OwnerOfferAccessGuard, MongooseModule],
 })
 export class SecurityModule {}
