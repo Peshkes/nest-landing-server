@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import { SuperUser, User } from "../../authentication/authentication.types";
+import { User } from "../../authentication/authentication.types";
 import { JwtService } from "../../share/services/jwt.service";
 import { RequestWithUser } from "../../share/interfaces/request-with-user.interface";
 import chalk from "chalk";
