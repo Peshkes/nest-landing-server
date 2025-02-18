@@ -1,0 +1,29 @@
+export class OfferErrors {
+  public static readonly POST_CREATE_OFFER = "Ошибка при создании коммерческого предложения: ";
+  public static readonly POST_CREATE_ARCHIVE_OFFER = "Ошибка при создании архиыного коммерческого предложения: ";
+  public static readonly OFFER_NOT_FOUND = "Коммерческое предложение не найдено. ";
+  public static readonly NO_OFFERS_FOUND = "В баще не найдено ни одного коммерческого предложения. ";
+  public static readonly OFFERS_NOT_FOUND = "Коммерческие предложения не найдены. ";
+  public static readonly SOME_OFFERS_NOT_FOUND = "Некоторые коммерческие предложения не были найдены. ";
+  public static readonly OFFER_UPDATE_ERROR = "Ошибка при обновлении коммерческого предложения: ";
+  public static readonly OFFER_DELETING_ERROR = "Ошибка при удалении черновых коммерческих предложений: ";
+  public static readonly ARCHIVE_OFFER_DELETING_ERROR = "Ошибка при удалении коммерческого предложения из архива: ";
+  public static readonly PUBLIC_OFFER_DELETING_ERROR = "Ошибка при удалении опубликованных коммерческих предложений: ";
+  public static readonly DRAFT_OFFER_RECEIVING_ERROR = "Ошибка при получении чернового коммерческого предложения: ";
+  public static readonly ALL_OFFER_RECEIVING_ERROR = "Ошибка при получении всех черновых коммерческих предложений: ";
+  public static readonly PUBLIC_OFFER_RECEIVING_ERROR = "Ошибка при получении опубликованного коммерческого предложения: ";
+  public static readonly DRAFT_OFFER_LIST_RECEIVING_ERROR = "Ошибка при получении списка черновых коммерческих предложений: ";
+  public static readonly PUBLIC_OFFER_LIST_RECEIVING_ERROR = "Ошибка при получении списка опубликованных коммерческих предложений: ";
+  public static readonly NO_DRAFT_OFFER_PUBLISH_ERROR = "Ошибка при публикации коммерчеого предложения без черновика: ";
+  public static readonly SAVE_DRAFT_OFFER_ERROR = "Ошибка при сохранении черновика коммерчеого предложения: ";
+  public static readonly SAVE_PUBLIC_OFFER_ERROR = "Ошибка при сохранении коммерчеого предложения: ";
+  public static readonly DUPLICATE_DRAFT_OFFER_ERROR = "Ошибка при копировании черновика коммерчеого предложения: ";
+  public static readonly MOVE_OFFER_ERROR = "Ошибка при переносе черновика коммерчеого предложения: ";
+  public static readonly UNPUBLISH_ERROR = "Ошибка при переносе опубликованного коммерчеого предложения в черновики: ";
+  public static readonly COPY_PUBLISHED_TO_DRAFTS_ERROR = "Ошибка при копировании опубликованного коммерчеого предложения в черновики: ";
+  public static readonly COPY_BETWEEN_GROUP_AND_USER_ERROR = "Ошибка при копировании коммерчеого предложения между группой и юзером: ";
+  public static readonly DELETE_ALL_OFFERS_BY_OWNER_ID_ERROR = "Ошибка при удалении коммерческих предложений пользователя или группы: ";
+  public static readonly ALL_OFFERS_BY_GROUP_ERROR = "Ошибка при получении коммерческих предложений группы: ";
+  public static readonly ALL_ARCHIVE_OFFERS_ERROR = "Ошибка при получении коммерческих предложений из архива: ";
+  public static readonly OFFER_ARCHIVE_RECEIVING_EXCEPTION = "Ошибка при получении коммерчеого предложения из архива: ";
+}

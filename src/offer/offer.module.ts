@@ -3,14 +3,22 @@ import { OfferController } from "./controller/offer.controller";
 import { OfferService } from "./service/offer.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import { SecurityModule } from "../security/security.module";
-import { DraftOfferDocument, DraftOfferSchema } from "./persistance/draft-offer.schema";
-import { PublicOfferDocument, PublicOfferSchema } from "./persistance/public-offer.schema";
+import { DraftOfferSchema, OfferDocument, OfferSchema, PublicOfferSchema } from "./persistance/offer.schema";
+import { ArchiveOfferDocument, ArchiveOfferSchema } from "./persistance/archive-offer.schema";
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: DraftOfferDocument.name, schema: DraftOfferSchema },
-      { name: PublicOfferDocument.name, schema: PublicOfferSchema },
+    MongooseModule.forFeature([{ name: ArchiveOfferDocument.name, schema: ArchiveOfferSchema }]),
+    MongooseModule.forFeatureAsync([
+      {
+        name: OfferDocument.name,
+        useFactory: () => {
+          const schema = OfferSchema;
+          schema.discriminator("draft", DraftOfferSchema);
+          schema.discriminator("published", PublicOfferSchema);
+          return schema;
+        },
+      },
     ]),
     SecurityModule,
   ],

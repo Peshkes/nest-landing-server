@@ -18,7 +18,7 @@ export class GroupAccessGuard implements CanActivate {
     const groupId = request.params.group_id;
     if (!groupId) return false;
 
-    const role = await this.getClientRole(request.user._id.toString(), groupId);
+    const role = await this.getClientRole(request.user_id, groupId);
     return role && Roles[role].weight >= this.minRole.weight;
   }
 
