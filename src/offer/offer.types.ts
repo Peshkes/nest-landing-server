@@ -1,6 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
-import mongoose from "mongoose";
-import { RoleName, Roles } from "../group/group.types";
+import { RoleName } from "../group/group.types";
 
 export type OfferPreview = {
   _id: string;

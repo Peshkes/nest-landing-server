@@ -1,14 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { AddGroupDto } from "../dto/add-group.dto";
-import {
-  FullGroupData,
-  Group,
-  GroupAccess,
-  GroupPreview,
-  GroupWithAdditionalData,
-  RoleName,
-  Roles,
-} from "../group.types";
+import { FullGroupData, Group, GroupAccess, GroupPreview, GroupWithAdditionalData, RoleName, Roles } from "../group.types";
 import { GroupMemberDto } from "../dto/group-member.dto";
 import { MailService } from "../../share/services/mailing.service";
 import crypto from "crypto";
